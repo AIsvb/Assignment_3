@@ -1,110 +1,95 @@
-import numpy as np
+# Computer Vision: Assignment 2
+# Creators: Gino Kuiper and Sander van Bennekom
+# Date: 04-03-2023
+
 import cv2
+import numpy as np
 
-def calculate_mean(path):
-    video = cv2.VideoCapture(path)
-    length = video.get(cv2.CAP_PROP_FRAME_COUNT)
-    ret, frame_rgb = video.read()
-    frame_hsv = cv2.cvtColor(frame_rgb, cv2.COLOR_BGR2HSV)
-    shape = frame_hsv.shape
-    sum = np.zeros(shape, dtype=int) + frame_hsv
 
-    while True:
-        ret, frame = video.read()
+class BackgroundSubtractor:
+    def __init__(self, background_path, video_path):
+        self.background = background_path
+        self.video = video_path
+        self.fgbg = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
+        self.kernel = np.ones((3, 3), np.uint8)
 
-        if frame is None:
-            break
+    def subtract_background(self):
+        background = cv2.VideoCapture(self.background)
+        video = cv2.VideoCapture(self.video)
+        # counter = 0
+
+        while True:
+            # Read background video and train background model
+            ret, frame = background.read()
+            self.fgbg.apply(frame)
+            if frame is None:
+                break
+
+            # Read video, subtract background without training the background model
+            ret, frame = video.read()
+            foreground = self.fgbg.apply(frame, None, 0)
+            if frame is None:
+                break
+
+            # Postprocessing
+            # foreground[np.abs(foreground) < 254] = 0
+            foreground_mask = self.draw_contours(foreground)
+
+            # Show video
+            cv2.imshow('Frame', frame)
+            cv2.imshow('Foreground Mask', foreground_mask)
+            # cv2.imwrite(f'data/cam2/frames2/{counter}.png', foreground_mask)
+            # counter += 1
+
+            keyboard = cv2.waitKey(1)
+            if keyboard == 'q':
+                break
+
+        video.release()
+        cv2.waitKey(0)
+        cv2.destroyAllWindows()
+        cv2.waitKey(0)
+
+    # Functionality to find and draw contours on a frame
+    def draw_contours(self, image):
+        ret, thresh = cv2.threshold(image, 127, 255, 0)
+        contours, hierarchy = cv2.findContours(thresh, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Create array containing the index, area and parent of every contour
+        contours2 = np.zeros((len(contours), 3))
+        for i in range(len(contours)):
+            contours2[i][0] = i
+            contours2[i][1] = float(cv2.contourArea(contours[i]))
+            contours2[i][2] = hierarchy[0][i][3]
+
+        # Sort contours in a large-small order
+        contours = sorted(contours, key=cv2.contourArea, reverse=True)
+        contours2 = contours2[contours2[:, 1].argsort()][::-1]
+
+        # Make copy of the input image to draw the contours on
+        image_copy = np.zeros_like(image)
+
+        # Per camera, set minimum area for contours to be drawn
+        if '1' in self.video:
+            min_area = 55
+        elif '2' in self.video:
+            min_area = 26
+        elif '3' in self.video:
+            min_area = 137
         else:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            sum += frame
+            min_area = 25
 
-    video.release()
-    return sum / length, shape
+        # Draw contours of the subject on the copy image
+        cv2.drawContours(image_copy, contours, -1, (255, 255, 255), thickness=cv2.FILLED)
+        # image_copy = cv2.erode(image_copy, self.kernel)
 
-def calculate_sd(path , mean, shape):
-    video = cv2.VideoCapture(path)
-    length = video.get(cv2.CAP_PROP_FRAME_COUNT)
-    SSE = np.zeros(shape, dtype=np.float64)
+        # # if '2' in self.video:
+        #     roi = image_copy[361:486, 0:644]
+        #     roi[:] = cv2.dilate(roi, self.kernel, iterations=5)
 
-    while True:
-        ret, frame = video.read()
+        # for i in range(1, len(contours)):
+        #     if contours2[i][2] == contours2[0][0]:
+        #         if contours2[i][1] > min_area:
+        #             cv2.drawContours(image_copy, [contours[i]], -1, (0, 0, 0), thickness=cv2.FILLED)
 
-        if frame is None:
-            break
-        else:
-            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-            SSE += (frame - mean)**2
-
-    video.release()
-    return np.sqrt(SSE / length)
-
-def get_foreground(path, mean, sd, shape):
-    video = cv2.VideoCapture(path)
-
-    while True:
-        foreground = np.ones(shape[0:2], dtype=np.uint8) * 255
-        ret, frame = video.read()
-
-        if frame is None:
-            break
-
-        i = 3
-        j = 8
-        l = 20
-        frame = cv2.cvtColor(frame, cv2.COLOR_BGR2HSV)
-        c1 = frame[:, :, 0] > mean[:, :, 0] - i*sd[:, :, 0]
-        c2 = frame[:, :, 1] > mean[:, :, 1] - j*sd[:, :, 1]
-        c3 = frame[:, :, 2] > mean[:, :, 2] - l*sd[:, :, 2]
-        lower = np.logical_and(c1, c2, c3)
-
-        c4 = frame[:, :, 0] < mean[:, :, 0] + i*sd[:, :, 0]
-        c5 = frame[:, :, 1] < mean[:, :, 1] + j*sd[:, :, 1]
-        c6 = frame[:, :, 2] < mean[:, :, 2] + l*sd[:, :, 2]
-        upper = np.logical_and(c4, c5, c6)
-
-
-        foreground[np.logical_and(lower, upper)] = 0
-
-        cv2.imshow("foreground", foreground)
-        cv2.waitKey(1)
-
-    video.release()
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-def calculate_difference(path):
-    video = cv2.VideoCapture(path)
-    ret, frame_1 = video.read()
-    frame_1 = cv2.cvtColor(frame_1, cv2.COLOR_BGR2HSV)
-
-    while True:
-        fg = np.ones(frame_1.shape[0:2], dtype=np.uint8)*255
-        ret, frame_2 = video.read()
-
-        if frame_2 is None:
-            break
-
-        frame_2 = cv2.cvtColor(frame_2, cv2.COLOR_BGR2HSV)
-        d = 20
-        c1 = frame_2[:, :, 0] - frame_1[:, :, 0] < d
-        c2 = frame_2[:, :, 1] - frame_1[:, :, 1] < d
-        c3 = frame_2[:, :, 2] - frame_1[:, :, 2] < d
-        frame_1 = frame_2
-        fg[np.logical_and(c1, c2, c3)] = 0
-        cv2.imshow("fg", fg)
-        cv2.waitKey(1)
-
-    video.release()
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
-
-
-path = "data/background/Take26.54389819.20141124164130.avi"
-video = "data/video/Take30.54389819.20141124164749.avi"
-
-mean, shape = calculate_mean(path)
-sd = calculate_sd(path, mean, shape)
-fg = get_foreground(video, mean, sd, shape)
-
-#calculate_difference(video)
+        return image_copy
