@@ -124,8 +124,8 @@ def contours(image):
 path = "data/cam3/background.avi"
 video = "data/cam4/video.avi"
 
-#mean, shape = calculate_mean(path)
-#sd = calculate_sd(path, mean, shape)
-#fg = get_foreground(video, mean, sd, shape)
+mean, shape = calculate_mean(path)
+sd = calculate_sd(path, mean, shape)
+fg = get_foreground(video, mean, sd, shape)
 
-calculate_difference(video)
+#calculate_difference(video)
