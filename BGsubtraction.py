@@ -117,10 +117,6 @@ def contours(image):
 
 
 
-
-
-
-
 path = "data/cam3/background.avi"
 video = "data/cam4/video.avi"
 

@@ -7,19 +7,18 @@ from CameraCalibrator import CameraCalibrator
 import glob
 
 """
-In this script, the first step of the assignment is executed, namely finding the intrinsic and extrinsic parameters
-of each of the four cameras.
+This script is meant to find the extrinsic parameters of each of the four cameras.
 """
 if __name__ == "__main__":
 
-    # Creating a CameraCalibrator object for the camera for which we want to find the intrinsics and extrinsics
+    # Creating a CameraCalibrator object for the camera for which we want to find the extrinsics
     cam = 1
-    path = f"data/cam{cam}/calibration/test_1.png"
+    path = f"data/cam{cam}/extrinsics.png"
     calibrator = CameraCalibrator((8, 6), 115, path)
 
-    # Finding the intrinsic parameters
-    files = glob.glob(f"data/cam{cam}/calibration/frame_*.png")
-    camera_matrix, distortion_coefficients = calibrator.get_intrinsic(files)
+    reader = cv2.FileStorage(f"data/cam{cam}/config.xml", cv2.FileStorage_READ)
+    camera_matrix = reader.getNode("camera_matrix").mat()
+    distortion_coefficients = reader.getNode("distortion_coefficients").mat()
 
     # Finding the extrinsic parameters
     rotation_vectors, translation_vectors, corners = calibrator.get_extrinsic(camera_matrix,

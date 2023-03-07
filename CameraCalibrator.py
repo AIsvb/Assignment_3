@@ -169,7 +169,7 @@ class CameraCalibrator:
     # A method for showing the pose of the chessboard in the image used to find the extrinsics
     def draw_pose(self, img, r_vecs, t_vecs, camera_matrix, distortion_coef, destination, cam):
         # Defining the end points of the axes (the axis start at the origin (0,0,0))
-        axes = np.float32([[4, 0, 0], [0, 4, 0], [0, 0, 4]]).reshape(-1, 3) * self.square_size
+        axes = np.float32([[4, 0, 0], [0, 4, 0], [0, 0, -4]]).reshape(-1, 3) * self.square_size
 
         # project 3D points to image plane
         image_points, _ = cv2.projectPoints(axes, r_vecs, t_vecs, camera_matrix, distortion_coef)

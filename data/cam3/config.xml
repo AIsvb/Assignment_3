@@ -20,13 +20,12 @@
   <cols>1</cols>
   <dt>d</dt>
   <data>
-    1.3706259008345414e+00 1.0450524224739526e+00
-    -1.0634359581399435e+00</data></rotation_vectors>
+    -9.1779733133698904e-01 1.0223401255660742e+00
+    1.4014041292260879e+00</data></rotation_vectors>
 <translation_vectors type_id="opencv-matrix">
   <rows>3</rows>
   <cols>1</cols>
   <dt>d</dt>
   <data>
-    -8.7290685764241107e+02 1.2492334586203003e+03
-    3.1955833473020380e+03</data></translation_vectors>
+    1.1536877273945552e+03 8.7392636868166778e+02 3.5571643984676230e+03</data></translation_vectors>
 </opencv_storage>
