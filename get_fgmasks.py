@@ -3,7 +3,7 @@
 # Date: 04-03-2023
 
 if __name__ == "__main__":
-    from BackgroundSubtraction import BackgroundSubtractor as BS
+    from BackgroundSubtractor import BackgroundSubtractor as BS
 
     bs1 = BS('data/cam1/background.avi', 'data/cam1/video.avi')
     # bs2 = BS('data/cam2/background.avi', 'data/cam2/video.avi')
