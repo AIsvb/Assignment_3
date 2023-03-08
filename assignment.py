@@ -4,13 +4,13 @@ import cv2
 from LookupTable import LookupTable as LT
 
 # Masks used for initialization (frame 0 of each view)
-mask1 = cv2.imread('data/cam1/mask.png')
-mask2 = cv2.imread('data/cam2/mask.png')
-mask3 = cv2.imread('data/cam3/mask.png')
-mask4 = cv2.imread('data/cam4/mask.png')
+mask1 = cv2.imread('data/cam1/voxel.png')
+mask2 = cv2.imread('data/cam2/voxel.png')
+mask3 = cv2.imread('data/cam3/voxel.png')
+mask4 = cv2.imread('data/cam4/voxel.png')
 
 # Create a look-up table
-LT = LT(50, 75, 100, mask1, mask2, mask3, mask4)
+LT = LT(150, 75, 100, mask1, mask2, mask3, mask4)
 LT.create_voxels()
 LT.create_lookup_table()
 
@@ -33,7 +33,7 @@ def set_voxel_positions():
     data, colors = [], []
 
     for v in voxel_list:
-        data.append([v.voxel_coordinates[0] * 0.05 - 30, v.voxel_coordinates[2] * 0.05, v.voxel_coordinates[1] * 0.05 - 30])
+        data.append([v.voxel_coordinates[0] * 0.05 + 10, -v.voxel_coordinates[2] * 0.05, v.voxel_coordinates[1] * 0.05 - 30])
         colors.append([v.color[0], v.color[1], v.color[2]])
     return data, colors
 
@@ -42,7 +42,7 @@ def set_voxel_positions_XOR(frame1, frame2, frame3, frame4, list):
     data, colors = [], []
     new_voxel_list = LT.get_voxels_XOR(frame1, frame2, frame3, frame4, list)
     for v in new_voxel_list:
-        data.append([v.voxel_coordinates[0] * 0.05 - 30, v.voxel_coordinates[2] * 0.05, v.voxel_coordinates[1] * 0.05 - 30])
+        data.append([v.voxel_coordinates[0] * 0.05 + 10, -v.voxel_coordinates[2] * 0.05, v.voxel_coordinates[1] * 0.05 - 30])
         colors.append([v.color[0], v.color[1], v.color[2]])
 
     return data, colors, new_voxel_list
@@ -65,7 +65,7 @@ def get_cam_positions():
         t_vecs = -np.matrix(r_vecs).T * np.matrix(t_vecs)
 
         t_vecs = t_vecs.astype(int)
-        translation= [-(t_vecs[0,0]-500)/20, t_vecs[2,0]/20, t_vecs[1,0]/20]
+        translation= [(t_vecs[0,0]-500)/20, -t_vecs[2,0]/20, t_vecs[1,0]/20]
 
         v.append(translation)
     return v, \

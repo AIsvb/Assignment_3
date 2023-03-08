@@ -27,10 +27,10 @@ class LookupTable:
         self.masks = [mask1, mask2, mask3, mask4]
 
         # Colored frames to color the voxels
-        self.colored_frame1 = cv2.imread('data/cam1/video1.png')
-        self.colored_frame2 = cv2.imread('data/cam2/video2.png')
-        self.colored_frame3 = cv2.imread('data/cam3/video3.png')
-        self.colored_frame4 = cv2.imread('data/cam4/video4.png')
+        self.colored_frame1 = cv2.imread('data/cam1/color.png')
+        self.colored_frame2 = cv2.imread('data/cam2/color.png')
+        self.colored_frame3 = cv2.imread('data/cam3/color.png')
+        self.colored_frame4 = cv2.imread('data/cam4/color.png')
 
 
     # Function to fill voxel list
@@ -38,7 +38,7 @@ class LookupTable:
         for x in range(self.width):
             for y in range(self.height):
                 for z in range(self.depth):
-                    self.voxels.append(Voxel(x * 20, y * 20 - 500, z * 20, self.cam1, self.cam2, self.cam3, self.cam4))
+                    self.voxels.append(Voxel(x * 20 - 1500, y * 20 - 500, -z * 20, self.cam1, self.cam2, self.cam3, self.cam4))
 
     # Function to create lookup table
     def create_lookup_table(self):

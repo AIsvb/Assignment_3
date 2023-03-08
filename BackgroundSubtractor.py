@@ -7,11 +7,12 @@ import numpy as np
 
 
 class BackgroundSubtractor:
-    def __init__(self, background_path, video_path):
+    def __init__(self, background_path, video_path, cam):
         self.background = background_path
         self.video = video_path
         self.fgbg = cv2.createBackgroundSubtractorMOG2(detectShadows=True)
         self.kernel = np.ones((3, 3), np.uint8)
+        self.cam = cam
 
     def subtract_background(self):
         background = cv2.VideoCapture(self.background)
@@ -35,7 +36,8 @@ class BackgroundSubtractor:
             # Show video
             cv2.imshow('Frame', frame)
             cv2.imshow('Foreground Mask', foreground_mask)
-            # cv2.imwrite(f'data/cam2/frames2/{counter}.png', foreground_mask)
+            cv2.imwrite(f"data/cam{self.cam}/color.png", frame)
+            cv2.imwrite(F'data/cam{self.cam}/voxel.png', foreground_mask)
             # counter += 1
 
             keyboard = cv2.waitKey(1)
