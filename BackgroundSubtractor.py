@@ -16,15 +16,12 @@ class BackgroundSubtractor:
     def subtract_background(self):
         background = cv2.VideoCapture(self.background)
         video = cv2.VideoCapture(self.video)
-        # counter = 0
+
+        # Read background video and train background model
+        ret, frame = background.read()
+        self.fgbg.apply(frame)
 
         while True:
-            # Read background video and train background model
-            ret, frame = background.read()
-            self.fgbg.apply(frame)
-            if frame is None:
-                break
-
             # Read video, subtract background without training the background model
             ret, frame = video.read()
             foreground = self.fgbg.apply(frame, None, 0)
@@ -69,27 +66,12 @@ class BackgroundSubtractor:
         # Make copy of the input image to draw the contours on
         image_copy = np.zeros_like(image)
 
-        # Per camera, set minimum area for contours to be drawn
-        if '1' in self.video:
-            min_area = 55
-        elif '2' in self.video:
-            min_area = 26
-        elif '3' in self.video:
-            min_area = 137
-        else:
-            min_area = 25
+        # Set minimum area for contours to be drawn
+        min_area = 1000
 
         # Draw contours of the subject on the copy image
-        cv2.drawContours(image_copy, contours, -1, (255, 255, 255), thickness=cv2.FILLED)
-        # image_copy = cv2.erode(image_copy, self.kernel)
-
-        # # if '2' in self.video:
-        #     roi = image_copy[361:486, 0:644]
-        #     roi[:] = cv2.dilate(roi, self.kernel, iterations=5)
-
-        # for i in range(1, len(contours)):
-        #     if contours2[i][2] == contours2[0][0]:
-        #         if contours2[i][1] > min_area:
-        #             cv2.drawContours(image_copy, [contours[i]], -1, (0, 0, 0), thickness=cv2.FILLED)
+        for i in range(0, len(contours)):
+            if contours2[i][1] > min_area:
+                cv2.drawContours(image_copy, [contours[i]], -1, (255, 255, 255), thickness=cv2.FILLED)
 
         return image_copy
