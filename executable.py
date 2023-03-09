@@ -6,11 +6,12 @@ from engine.buffer.texture import *
 from engine.buffer.hdrbuffer import HDRBuffer
 from engine.buffer.blurbuffer import BlurBuffer
 from engine.effect.bloom import Bloom
-from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices, set_voxel_positions_XOR, voxel_list
+from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices, set_voxel_positions_XOR #, voxel_list
 from engine.camera import Camera
 from engine.config import config
 import cv2
 
+started = False
 cube, hdrbuffer, blurbuffer, lastPosX, lastPosY = None, None, None, None, None
 firstTime = True
 window_width, window_height = config['window_width'], config['window_height']
@@ -146,6 +147,10 @@ def main():
         for cam in cam_shapes:
             cam.draw_multiple(depth_program)
 
+        if started:
+            positions, colors = set_voxel_positions()
+            cube.set_multiple_positions(positions, colors)
+
         hdrbuffer.bind()
 
         window_width_px, window_height_px = glfw.get_framebuffer_size(window)
@@ -183,27 +188,10 @@ def key_callback(window, key, scancode, action, mods):
     if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
         glfw.set_window_should_close(window, glfw.TRUE)
     if key == glfw.KEY_G and action == glfw.PRESS:
-        global cube
+        global cube, started
         positions, colors = set_voxel_positions()
         cube.set_multiple_positions(positions, colors)
-    if key == glfw.KEY_1 and action == glfw.PRESS:
-         set_XOR_voxels(2, voxel_list)
-    if key == glfw.KEY_2 and action == glfw.PRESS:
-         set_XOR_voxels(3, voxel_list)
-    if key == glfw.KEY_3 and action == glfw.PRESS:
-         set_XOR_voxels(4, voxel_list)
-    if key == glfw.KEY_4 and action == glfw.PRESS:
-         set_XOR_voxels(5, voxel_list)
-    if key == glfw.KEY_5 and action == glfw.PRESS:
-        set_XOR_voxels(6, voxel_list)
-    if key == glfw.KEY_6 and action == glfw.PRESS:
-         set_XOR_voxels(7, voxel_list)
-    if key == glfw.KEY_7 and action == glfw.PRESS:
-         set_XOR_voxels(8, voxel_list)
-    if key == glfw.KEY_8 and action == glfw.PRESS:
-         set_XOR_voxels(9, voxel_list)
-    if key == glfw.KEY_9 and action == glfw.PRESS:
-        set_XOR_voxels(10, voxel_list)
+        started = False
 
 def set_XOR_voxels(c, list):
     counter = c

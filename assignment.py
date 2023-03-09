@@ -1,8 +1,9 @@
 import glm
 import numpy as np
 import cv2
-from LookupTable import LookupTable as LT
+from LookUp import LookupTable as LT
 
+'''
 # Masks used for initialization (frame 0 of each view)
 mask1 = cv2.imread('data/cam1/voxel.png')
 mask2 = cv2.imread('data/cam2/voxel.png')
@@ -10,13 +11,23 @@ mask3 = cv2.imread('data/cam3/voxel.png')
 mask4 = cv2.imread('data/cam4/voxel.png')
 
 # Create a look-up table
-LT = LT(150, 75, 100, mask1, mask2, mask3, mask4)
+LT = LT(150, 75, 100)
 LT.create_voxels()
 LT.create_lookup_table()
 
 # List of first voxels that need to be shown
 voxel_list = LT.get_voxels(mask1, mask2, mask3, mask4)
+'''
 
+# Masks used for initialization (frame 0 of each view)
+mask1 = cv2.imread('data/cam1/voxel.png', cv2.IMREAD_GRAYSCALE)
+mask2 = cv2.imread('data/cam2/voxel.png', cv2.IMREAD_GRAYSCALE)
+mask3 = cv2.imread('data/cam3/voxel.png', cv2.IMREAD_GRAYSCALE)
+mask4 = cv2.imread('data/cam4/voxel.png', cv2.IMREAD_GRAYSCALE)
+
+table = LT(75, 100, 80)
+
+frame_no = 0
 block_size = 1.0
 
 def generate_grid(width, depth):
@@ -30,11 +41,14 @@ def generate_grid(width, depth):
     return data, colors
 
 def set_voxel_positions():
-    data, colors = [], []
+    #global frame_no
+    #data, colors = [], []
 
-    for v in voxel_list:
-        data.append([v.voxel_coordinates[0] * 0.05 + 10, -v.voxel_coordinates[2] * 0.05, v.voxel_coordinates[1] * 0.05 - 30])
-        colors.append([v.color[0], v.color[1], v.color[2]])
+    #for v in voxel_list:
+       # data.append([v.voxel_coordinates[0] * 0.05 + 10, -v.voxel_coordinates[2] * 0.05, v.voxel_coordinates[1] * 0.05 - 30])
+       # colors.append([v.color[0], v.color[1], v.color[2]])
+    #frame_no += 1
+    data, colors = table.get_voxels([mask1, mask2, mask3, mask4])
     return data, colors
 
 # Function to set voxels based on a XOR-mask

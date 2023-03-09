@@ -26,6 +26,7 @@ for i, voxel in enumerate(voxel_list):
 criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
 ret,label,center=cv2.kmeans(coords, 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
 
+
 voxel_data = np.append(coords, label, axis=1)
 
 camera = 2
