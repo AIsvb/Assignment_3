@@ -19,11 +19,11 @@ LT.create_lookup_table()
 voxel_list = LT.get_voxels(mask1, mask2, mask3, mask4)
 '''
 
-# Masks used for initialization (frame 0 of each view)
-foreground_1 = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
-foreground_2 = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
-foreground_3 = cv2.VideoCapture("data/cam3/foreground_cropped.avi")
-foreground_4 = cv2.VideoCapture("data/cam4/foreground_cropped.avi")
+
+foreground_1 = cv2.VideoCapture("data/cam1/XOR.avi")
+foreground_2 = cv2.VideoCapture("data/cam2/XOR.avi")
+foreground_3 = cv2.VideoCapture("data/cam3/XOR.avi")
+foreground_4 = cv2.VideoCapture("data/cam4/XOR.avi")
 
 _, mask_1a = foreground_1.read()
 mask_1a = cv2.cvtColor(mask_1a, cv2.COLOR_BGR2GRAY)
@@ -86,6 +86,7 @@ def set_voxel_positions_XOR():
     mask_4a = mask_4b
 
     data, colors = table.get_voxels_XOR([XOR_1, XOR_2, XOR_3, XOR_4])
+
     return data, colors
 
 # Method to get the camera positions (translation)
