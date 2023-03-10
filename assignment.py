@@ -20,10 +20,10 @@ voxel_list = LT.get_voxels(mask1, mask2, mask3, mask4)
 '''
 
 
-foreground_1 = cv2.VideoCapture("data/cam1/XOR.avi")
-foreground_2 = cv2.VideoCapture("data/cam2/XOR.avi")
-foreground_3 = cv2.VideoCapture("data/cam3/XOR.avi")
-foreground_4 = cv2.VideoCapture("data/cam4/XOR.avi")
+foreground_1 = cv2.VideoCapture("data/cam1/foreground.avi")
+foreground_2 = cv2.VideoCapture("data/cam2/foreground.avi")
+foreground_3 = cv2.VideoCapture("data/cam3/foreground.avi")
+foreground_4 = cv2.VideoCapture("data/cam4/foreground.avi")
 
 _, mask_1a = foreground_1.read()
 mask_1a = cv2.cvtColor(mask_1a, cv2.COLOR_BGR2GRAY)
