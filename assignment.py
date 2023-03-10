@@ -20,12 +20,24 @@ voxel_list = LT.get_voxels(mask1, mask2, mask3, mask4)
 '''
 
 # Masks used for initialization (frame 0 of each view)
-mask1 = cv2.imread('data/cam1/voxel.png', cv2.IMREAD_GRAYSCALE)
-mask2 = cv2.imread('data/cam2/voxel.png', cv2.IMREAD_GRAYSCALE)
-mask3 = cv2.imread('data/cam3/voxel.png', cv2.IMREAD_GRAYSCALE)
-mask4 = cv2.imread('data/cam4/voxel.png', cv2.IMREAD_GRAYSCALE)
+foreground_1 = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
+foreground_2 = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
+foreground_3 = cv2.VideoCapture("data/cam3/foreground_cropped.avi")
+foreground_4 = cv2.VideoCapture("data/cam4/foreground_cropped.avi")
 
-table = LT(75, 100, 80)
+_, mask_1a = foreground_1.read()
+mask_1a = cv2.cvtColor(mask_1a, cv2.COLOR_BGR2GRAY)
+
+_, mask_2a = foreground_2.read()
+mask_2a = cv2.cvtColor(mask_2a, cv2.COLOR_BGR2GRAY)
+
+_, mask_3a = foreground_3.read()
+mask_3a = cv2.cvtColor(mask_3a, cv2.COLOR_BGR2GRAY)
+
+_ ,mask_4a = foreground_4.read()
+mask_4a = cv2.cvtColor(mask_4a, cv2.COLOR_BGR2GRAY)
+
+table = LT(170, 75, 100)
 
 frame_no = 0
 block_size = 1.0
@@ -41,25 +53,40 @@ def generate_grid(width, depth):
     return data, colors
 
 def set_voxel_positions():
-    #global frame_no
-    #data, colors = [], []
+    global mask_1a, mask_2a, mask_3a, mask_4a
 
-    #for v in voxel_list:
-       # data.append([v.voxel_coordinates[0] * 0.05 + 10, -v.voxel_coordinates[2] * 0.05, v.voxel_coordinates[1] * 0.05 - 30])
-       # colors.append([v.color[0], v.color[1], v.color[2]])
-    #frame_no += 1
-    data, colors = table.get_voxels([mask1, mask2, mask3, mask4])
+    data, colors = table.get_voxels([mask_1a, mask_2a, mask_3a, mask_4a])
+    
     return data, colors
 
 # Function to set voxels based on a XOR-mask
-def set_voxel_positions_XOR(frame1, frame2, frame3, frame4, list):
-    data, colors = [], []
-    new_voxel_list = LT.get_voxels_XOR(frame1, frame2, frame3, frame4, list)
-    for v in new_voxel_list:
-        data.append([v.voxel_coordinates[0] * 0.05 + 10, -v.voxel_coordinates[2] * 0.05, v.voxel_coordinates[1] * 0.05 - 30])
-        colors.append([v.color[0], v.color[1], v.color[2]])
+def set_voxel_positions_XOR():
+    global mask_1a, mask_2a, mask_3a, mask_4a
 
-    return data, colors, new_voxel_list
+    _, mask_1b = foreground_1.read()
+    mask_1b = cv2.cvtColor(mask_1b, cv2.COLOR_BGR2GRAY)
+
+    _, mask_2b = foreground_2.read()
+    mask_2b = cv2.cvtColor(mask_2b, cv2.COLOR_BGR2GRAY)
+
+    _, mask_3b = foreground_3.read()
+    mask_3b = cv2.cvtColor(mask_3b, cv2.COLOR_BGR2GRAY)
+
+    _, mask_4b = foreground_4.read()
+    mask_4b = cv2.cvtColor(mask_4b, cv2.COLOR_BGR2GRAY)
+
+    XOR_1 = mask_1b ^ mask_1a
+    XOR_2 = mask_2b ^ mask_2a
+    XOR_3 = mask_3b ^ mask_3a
+    XOR_4 = mask_4b ^ mask_4a
+
+    mask_1a = mask_1b
+    mask_2a = mask_2b
+    mask_3a = mask_3b
+    mask_4a = mask_4b
+
+    data, colors = table.get_voxels_XOR([XOR_1, XOR_2, XOR_3, XOR_4])
+    return data, colors
 
 # Method to get the camera positions (translation)
 def get_cam_positions():

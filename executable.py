@@ -6,7 +6,7 @@ from engine.buffer.texture import *
 from engine.buffer.hdrbuffer import HDRBuffer
 from engine.buffer.blurbuffer import BlurBuffer
 from engine.effect.bloom import Bloom
-from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices, set_voxel_positions_XOR #, voxel_list
+from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices, set_voxel_positions_XOR
 from engine.camera import Camera
 from engine.config import config
 import cv2
@@ -148,7 +148,7 @@ def main():
             cam.draw_multiple(depth_program)
 
         if started:
-            positions, colors = set_voxel_positions()
+            positions, colors = set_voxel_positions_XOR()
             cube.set_multiple_positions(positions, colors)
 
         hdrbuffer.bind()
@@ -188,33 +188,13 @@ def key_callback(window, key, scancode, action, mods):
     if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
         glfw.set_window_should_close(window, glfw.TRUE)
     if key == glfw.KEY_G and action == glfw.PRESS:
-        global cube, started
+        global cube
         positions, colors = set_voxel_positions()
         cube.set_multiple_positions(positions, colors)
-        started = False
+    if key == glfw.KEY_V and action == glfw.PRESS:
+        global started
 
-def set_XOR_voxels(c, list):
-    counter = c
-
-    frame1_a = cv2.imread(f'data/cam1/frames1/{counter}.png')
-    frame2_a = cv2.imread(f'data/cam2/frames2/{counter}.png')
-    frame3_a = cv2.imread(f'data/cam3/frames3/{counter}.png')
-    frame4_a = cv2.imread(f'data/cam4/frames4/{counter}.png')
-
-    frame1_b = cv2.imread(f'data/cam1/frames1/{counter - 1}.png')
-    frame2_b = cv2.imread(f'data/cam2/frames2/{counter - 1}.png')
-    frame3_b = cv2.imread(f'data/cam3/frames3/{counter - 1}.png')
-    frame4_b = cv2.imread(f'data/cam4/frames4/{counter - 1}.png')
-
-    XOR_1 = frame1_a ^ frame1_b
-    XOR_2 = frame2_a ^ frame2_b
-    XOR_3 = frame3_a ^ frame3_b
-    XOR_4 = frame4_a ^ frame4_b
-
-    positions, colors, new_voxel_list = set_voxel_positions_XOR(XOR_1, XOR_2, XOR_3, XOR_4, list)
-    cube.set_multiple_positions(positions, colors)
-    print(f"3D-reconstruction #{counter} made.")
-
+        started = not started
 
 def mouse_move(win, pos_x, pos_y):
     global firstTime, camera, lastPosX, lastPosY

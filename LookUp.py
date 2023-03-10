@@ -16,7 +16,7 @@ class LookupTable:
 
         # Dictionary that will serve as lookup table
         self.lookup_table = defaultdict(list)
-        #self.voxel2coord = np.ones((width, depth, height, 4, 2), dtype=int)
+        self.voxel2coord = np.ones((width, depth, height, 4, 2), dtype=int)
 
         # Camera intrinsics and extrinsics per view
         self.cameras = self.configure_cameras()
@@ -30,18 +30,17 @@ class LookupTable:
             t_vecs = camera.t_vecs
             mtx = camera.camera_matrix
             dst = camera.distortion_coef
-            for x in range(self.width):
-                for y in range(self.depth):
-                    for z in range(self.height):
-                        voxel = np.float32([x * 20 - 1500, y * 20 - 500, -z * 20])
+            for x in np.arange(0, self.width):
+                for y in np.arange(0, self.depth):
+                    for z in np.arange(0, self.height):
+                        voxel = np.float32([x * 20 - 1900, y * 20 - 500, -z * 20])
                         coordinates, _ = cv2.projectPoints(voxel, r_vecs, t_vecs, mtx, dst)
                         coordinates = tuple(coordinates[0].ravel().astype(int))
-                        #print(coordinates)
-                        #self.voxel2coord[x, y, z, i] = np.array(coordinates)
+                        self.voxel2coord[x, y, z, i] = np.array(coordinates)
                         self.lookup_table[i + 1, coordinates].append(Voxel(x, y, z))
     def get_voxels(self, views):
-        for x in range(486):
-            for y in range(644):
+        for x in np.arange(0, 486):
+            for y in np.arange(0, 644):
                 for i, view in enumerate(views):
                     if view[x, y] == 255:
                         for voxel in self.lookup_table[i + 1, (y, x)]:
@@ -51,15 +50,35 @@ class LookupTable:
 
         #colors_x = self.voxel2coord[voxels_on, :, 0]
         #colors_y = self.voxel2coord[voxels_on, :, 1]
-        #for i in range(4):
-         #   colors = images[i][colors_x[:, i].tolist(), colors_y[:, i], :]
+
+        #colors_1 = images[0][colors_x[:, 0].tolist(), colors_y[:, 0], :]
+        #colors_2 = images[1][colors_x[:, 1].tolist(), colors_y[:, 1], :]
+        #colors_3 = images[2][colors_x[:, 2].tolist(), colors_y[:, 2], :]
+        #colors_4 = images[3][colors_x[:, 3].tolist(), colors_y[:, 3], :]
+
+
+
         voxels_on = np.nonzero(voxels_on)
         data = np.column_stack((voxels_on[0], voxels_on[2], voxels_on[1])).tolist()
         colors = np.zeros((len(data), 3), dtype=int).tolist()
         return data, colors
 
-    def get_voxels_XOR(self):
-        pass
+    def get_voxels_XOR(self, views):
+        for x in np.arange(0, 486):
+            for y in np.arange(0, 644):
+                for i, view in enumerate(views):
+                    if view[x, y] == 255:
+                        for voxel in self.lookup_table[i + 1, (y, x)]:
+                            value = self.voxel_space[voxel.width, voxel.depth, voxel.height, i]
+                            self.voxel_space[voxel.width, voxel.depth, voxel.height, i] = not value
+
+        voxels_on = np.all(self.voxel_space, axis=3)
+        voxels_on = np.nonzero(voxels_on)
+
+        data = np.column_stack((voxels_on[0], voxels_on[2], voxels_on[1])).tolist()
+        colors = np.zeros((len(data), 3), dtype=int).tolist()
+
+        return data, colors
 
     # Function to set camera intrinsics and extrinsics
     def configure_cameras(self):
@@ -87,19 +106,6 @@ class Voxel:
         self.height = height
         self.color = []
 
-    # Function to set the color of a voxel given 4 input frames
-    def set_color(self, frame1, frame2, frame3, frame4):
-        color1 = frame1[self.cam_coordinates[0][1], self.cam_coordinates[0][0]]
-        color2 = frame2[self.cam_coordinates[1][1], self.cam_coordinates[1][0]]
-        color3 = frame3[self.cam_coordinates[2][1], self.cam_coordinates[2][0]]
-        color4 = frame4[self.cam_coordinates[3][1], self.cam_coordinates[3][0]]
-
-        b = ((int(color1[0]) + int(color2[0]) + int(color3[0]) + int(color4[0])) / 4) / 255
-        g = ((int(color1[1]) + int(color2[1]) + int(color3[1]) + int(color4[1])) / 4) / 255
-        r = ((int(color1[2]) + int(color2[2]) + int(color3[2]) + int(color4[2])) / 4) / 255
-
-        self.color = [r, g, b]
-
 # Camera class to store intrinsics and extrinsics
 class Camera:
     def __init__(self, r_vecs, t_vecs, camera_matrix, distortion_coef):
@@ -108,8 +114,3 @@ class Camera:
         self.camera_matrix = camera_matrix
         self.distortion_coef = distortion_coef
 
-# Masks used for initialization (frame 0 of each view)
-mask1 = cv2.imread('data/cam1/voxel.png', cv2.IMREAD_GRAYSCALE)
-mask2 = cv2.imread('data/cam2/voxel.png', cv2.IMREAD_GRAYSCALE)
-mask3 = cv2.imread('data/cam3/voxel.png', cv2.IMREAD_GRAYSCALE)
-mask4 = cv2.imread('data/cam4/voxel.png', cv2.IMREAD_GRAYSCALE)
