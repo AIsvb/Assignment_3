@@ -24,6 +24,7 @@ mask_4a = cv2.cvtColor(mask_4a, cv2.COLOR_BGR2GRAY)
 voxel_size = 50
 table = LT(68, 94, 40, voxel_size)
 
+
 frame_no = 0
 block_size = 1
 
