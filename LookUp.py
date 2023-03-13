@@ -8,11 +8,12 @@ from collections import defaultdict
 
 
 class LookupTable:
-    def __init__(self, width, height, depth):
+    def __init__(self, width, depth, height, voxel_size):
         self.voxel_space = np.zeros((width, depth, height, 4), dtype=bool)
         self.width = width
         self.height = height
         self.depth = depth
+        self.voxel_size = voxel_size
 
         # Dictionary that will serve as lookup table
         self.lookup_table = defaultdict(list)
@@ -33,7 +34,7 @@ class LookupTable:
             for x in np.arange(0, self.width):
                 for y in np.arange(0, self.depth):
                     for z in np.arange(0, self.height):
-                        voxel = np.float32([x * 20 - 1900, y * 20 - 500, -z * 20])
+                        voxel = np.float32([x * self.voxel_size - 1900, y * self.voxel_size - 700, -z * self.voxel_size])
                         coordinates, _ = cv2.projectPoints(voxel, r_vecs, t_vecs, mtx, dst)
                         coordinates = tuple(coordinates[0].ravel().astype(int))
                         self.voxel2coord[x, y, z, i] = np.array(coordinates)
@@ -73,6 +74,7 @@ class LookupTable:
                             self.voxel_space[voxel.width, voxel.depth, voxel.height, i] = not value
 
         voxels_on = np.all(self.voxel_space, axis=3)
+
         voxels_on = np.nonzero(voxels_on)
 
         data = np.column_stack((voxels_on[0], voxels_on[2], voxels_on[1])).tolist()

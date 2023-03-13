@@ -35,7 +35,7 @@ class LookupTable:
 
     # Function to fill voxel list
     def create_voxels(self):
-        for x in range(self.width):
+        for x in np.arange(0, self.width):
             for y in range(self.height):
                 for z in range(self.depth):
                     self.voxels.append(Voxel(x * 20 - 1500, y * 20 - 500, -z * 20, self.cam1, self.cam2, self.cam3, self.cam4))

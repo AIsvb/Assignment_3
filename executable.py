@@ -9,7 +9,6 @@ from engine.effect.bloom import Bloom
 from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices, set_voxel_positions_XOR
 from engine.camera import Camera
 from engine.config import config
-import cv2
 
 started = False
 cube, hdrbuffer, blurbuffer, lastPosX, lastPosY = None, None, None, None, None
@@ -183,7 +182,6 @@ def resize_callback(window, w, h):
         blurbuffer.delete()
         blurbuffer.create(window_width_px, window_height_px)
 
-t = 1
 def key_callback(window, key, scancode, action, mods):
     if key == glfw.KEY_ESCAPE and action == glfw.PRESS:
         glfw.set_window_should_close(window, glfw.TRUE)
