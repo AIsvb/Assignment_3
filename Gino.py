@@ -5,12 +5,9 @@ from LookUp import LookupTable
 import matplotlib.pyplot as plt
 
 
-# Masks used for initialization (frame 0 of each view)
-
-
-def create_table(x, y, z):
+def create_table(x, y, z, voxel_size):
     start = time.time()
-    table = LookupTable(x, y, z, 20)
+    table = LookupTable(x, y, z, voxel_size)
     end = time.time()
     print(f"Execution time lookup table creation: {(end - start)} seconds")
     return table
@@ -84,14 +81,15 @@ def create_colormodel(table, clusters, view, phase):
                 frame = cv2.cvtColor(cv2.imread(f'data/cam{n + 1}/offline_phase/{view}_colored.png'), cv2.COLOR_BGR2HSV)
 
                 # Initialize a mask, first all zeroes
-                mask = np.zeros_like(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+                mask = np.zeros_like(frame)
 
                 # Loop over the corresponding list of image points, and assign 1 to that point in the mask
                 for m in range(len(image_points[n])):
-                    mask[image_points[n][m][1], image_points[n][m][0]] = 1
+                    mask[image_points[n][m][1], image_points[n][m][0]] = \
+                        frame[image_points[n][m][1], image_points[n][m][0]]
 
                 # Add the resulting histogram to the list of histograms
-                histograms.append(cv2.calcHist([frame], [0, 1], mask, [180, 256], [0, 180, 0, 256]))
+                histograms.append(cv2.calcHist(mask, [0, 1], None, [180, 256], [0, 180, 0, 256]))
 
             # The color model is the average HS-histogram of the four views
             final_histogram = (histograms[0] + histograms[1] + histograms[2] + histograms[3]) / 4
@@ -99,19 +97,21 @@ def create_colormodel(table, clusters, view, phase):
 
         if phase == "Offline":
             # Obtain the colored frame of that view and convert it to HSV
-            frame = cv2.cvtColor(cv2.imread(f'data/cam{view}/offline_phase/{view}_colored.png'), cv2.COLOR_BGR2HSV)
+            frame = cv2.imread(f'data/cam{view}/offline_phase/{view}_colored.png')
+            # frame = cv2.cvtColor(cv2.imread(f'data/cam{view}/offline_phase/{view}_colored.png'), cv2.COLOR_BGR2HSV)
 
             # Initialize a mask, first all zeroes
-            mask = np.zeros_like(cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY))
+            mask = np.zeros_like(frame)
 
             # Loop over the corresponding list of image points, and assign 1 to that point in the mask
             for m in range(len(image_points[view - 1])):
-                mask[image_points[view - 1][m][1], image_points[view - 1][m][0]] = 255
+                mask[image_points[view - 1][m][1], image_points[view - 1][m][0]] = \
+                    frame[image_points[view - 1][m][1], image_points[view - 1][m][0]]
 
             cv2.imshow('mask', mask)
             cv2.waitKey(0)
 
-            histogram = cv2.calcHist([frame], [0, 1], mask, [180, 256], [0, 180, 0, 256])
+            histogram = cv2.calcHist([mask], [0, 1], None, [180, 256], [0, 180, 0, 256])
             color_models.append(histogram)
 
     end = time.time()
@@ -121,7 +121,8 @@ def create_colormodel(table, clusters, view, phase):
 # Offline phase
 def offline_phase():
     # Create lookup table
-    table = create_table(50, 50, 50)
+    table = create_table(136, 188, 80, 25)
+    # table = create_table(50, 50, 50, 25)
     print("\n")
 
     unmatched_color_models = []
