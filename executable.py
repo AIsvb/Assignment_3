@@ -147,7 +147,7 @@ def main():
             cam.draw_multiple(depth_program)
 
         if started:
-            positions, colors = set_voxel_positions_XOR()
+            positions, colors = set_voxel_positions()
             cube.set_multiple_positions(positions, colors)
 
         hdrbuffer.bind()

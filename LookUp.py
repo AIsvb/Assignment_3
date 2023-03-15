@@ -18,6 +18,7 @@ class LookupTable:
         # Dictionary that will serve as lookup table
         self.lookup_table = defaultdict(list)
         self.voxel2coord = np.ones((width, depth, height, 4, 2), dtype=int)
+        self.v2c = {}
 
         # Camera intrinsics and extrinsics per view
         self.cameras = self.configure_cameras()
@@ -38,8 +39,10 @@ class LookupTable:
                         coordinates, _ = cv2.projectPoints(voxel, r_vecs, t_vecs, mtx, dst)
                         coordinates = tuple(coordinates[0].ravel().astype(int))
                         self.voxel2coord[x, y, z, i] = np.array(coordinates)
-                        self.lookup_table[i + 1, coordinates].append(Voxel(x, y, z))
+                        cube = Voxel(x, y, z)
+                        self.lookup_table[i + 1, coordinates].append(cube)
     def get_voxels(self, views):
+        self.voxel_space = np.zeros((self.width, self.depth, self.height, 4), dtype=bool)
         for x in np.arange(0, 486):
             for y in np.arange(0, 644):
                 for i, view in enumerate(views):
@@ -106,7 +109,6 @@ class Voxel:
         self.width = width
         self.depth = depth
         self.height = height
-        self.color = []
 
 # Camera class to store intrinsics and extrinsics
 class Camera:

@@ -31,7 +31,9 @@ def create_mask_video(background, foreground, dest):
         if (counter + 10) % 10 == 0:
             foreground = fgbg.apply(frame, None, 0)
             foreground_mask = draw_contours(foreground)
-            cv2.imshow("img", foreground_mask)
+            kernel = np.ones((3,3), np.uint8)
+            foreground_mask = cv2.morphologyEx(foreground_mask, cv2.MORPH_OPEN, kernel)
+            #cv2.imshow("img", foreground_mask)
             out.write(foreground_mask)
 
         if cv2.waitKey(1) & 0xFF == ord("q"):
@@ -39,7 +41,7 @@ def create_mask_video(background, foreground, dest):
 
     video.release()
     out.release()
-    cv2.destroyAllWindows()
+    #cv2.destroyAllWindows()
 
 def draw_contours(image):
     ret, thresh = cv2.threshold(image, 127, 255, 0)
@@ -138,10 +140,10 @@ def create_XOR_videos():
     out3.release()
     out4.release()
 
-create_XOR_videos()
+#create_XOR_videos()
 
-#cam = 4
-#bg = f"data/cam{cam}/background.avi"
-#fg = f"data/cam{cam}/video.avi"
-#dest = f"data/cam{cam}/foreground_cropped.avi"
-#create_mask_video(bg, fg, dest)
+cam = 4
+bg = f"data/cam{cam}/background.avi"
+fg = f"data/cam{cam}/video.avi"
+dest = f"data/cam{cam}/foreground_cropped.avi"
+create_mask_video(bg, fg, dest)

@@ -4,27 +4,11 @@ import cv2
 from LookUp import LookupTable as LT
 import time
 
-foreground = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
-foreground = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
-foreground = cv2.VideoCapture("data/cam3/foreground_cropped.avi")
-foreground = cv2.VideoCapture("data/cam4/foreground_cropped.avi")
+foreground1 = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
+foreground2 = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
+foreground3 = cv2.VideoCapture("data/cam3/foreground_cropped.avi")
+foreground4 = cv2.VideoCapture("data/cam4/foreground_cropped.avi")
 
-foreground_1 = cv2.VideoCapture("data/cam1/XOR.avi")
-foreground_2 = cv2.VideoCapture("data/cam2/XOR.avi")
-foreground_3 = cv2.VideoCapture("data/cam3/XOR.avi")
-foreground_4 = cv2.VideoCapture("data/cam4/XOR.avi")
-
-_, mask_1a = foreground.read()
-mask_1a = cv2.cvtColor(mask_1a, cv2.COLOR_BGR2GRAY)
-
-_, mask_2a = foreground.read()
-mask_2a = cv2.cvtColor(mask_2a, cv2.COLOR_BGR2GRAY)
-
-_, mask_3a = foreground.read()
-mask_3a = cv2.cvtColor(mask_3a, cv2.COLOR_BGR2GRAY)
-
-_ ,mask_4a = foreground.read()
-mask_4a = cv2.cvtColor(mask_4a, cv2.COLOR_BGR2GRAY)
 
 voxel_size = 50
 table = LT(68, 94, 40, voxel_size)
@@ -46,7 +30,17 @@ def generate_grid(width, depth):
     return data, colors
 
 def set_voxel_positions():
-    global mask_1a, mask_2a, mask_3a, mask_4a
+    _, mask_1a = foreground1.read()
+    mask_1a = cv2.cvtColor(mask_1a, cv2.COLOR_BGR2GRAY)
+
+    _, mask_2a = foreground2.read()
+    mask_2a = cv2.cvtColor(mask_2a, cv2.COLOR_BGR2GRAY)
+
+    _, mask_3a = foreground3.read()
+    mask_3a = cv2.cvtColor(mask_3a, cv2.COLOR_BGR2GRAY)
+
+    _, mask_4a = foreground4.read()
+    mask_4a = cv2.cvtColor(mask_4a, cv2.COLOR_BGR2GRAY)
 
     data, colors = table.get_voxels([mask_1a, mask_2a, mask_3a, mask_4a])
     
@@ -79,32 +73,32 @@ def set_voxel_positions2():
 
 # Function to set voxels based on a XOR-mask
 def set_voxel_positions_XOR():
-    global mask_1a, mask_2a, mask_3a, mask_4a
+    global mask_1a, mask_2a, mask_3a, mask_4a, voxel_space
 
-    _, mask_1b = foreground_1.read()
+    _, mask_1b = foreground1.read()
     mask_1b = cv2.cvtColor(mask_1b, cv2.COLOR_BGR2GRAY)
 
-    _, mask_2b = foreground_2.read()
+    _, mask_2b = foreground2.read()
     mask_2b = cv2.cvtColor(mask_2b, cv2.COLOR_BGR2GRAY)
 
-    _, mask_3b = foreground_3.read()
+    _, mask_3b = foreground3.read()
     mask_3b = cv2.cvtColor(mask_3b, cv2.COLOR_BGR2GRAY)
 
-    _, mask_4b = foreground_4.read()
+    _, mask_4b = foreground4.read()
     mask_4b = cv2.cvtColor(mask_4b, cv2.COLOR_BGR2GRAY)
 
-    #XOR_1 = np.bitwise_xor(mask_1b, mask_1a)
-    #XOR_2 = np.bitwise_xor(mask_2b, mask_2a)
-    #XOR_3 = np.bitwise_xor(mask_3b, mask_3a)
-    #XOR_4 = np.bitwise_xor(mask_4b, mask_4a)
+    XOR_1 = np.bitwise_xor(mask_1b, mask_1a)
+    XOR_2 = np.bitwise_xor(mask_2b, mask_2a)
+    XOR_3 = np.bitwise_xor(mask_3b, mask_3a)
+    XOR_4 = np.bitwise_xor(mask_4b, mask_4a)
 
-    #mask_1a = np.copy(mask_1b)
-    #mask_2a = np.copy(mask_2b)
-    #mask_3a = np.copy(mask_3b)
-    #mask_4a = np.copy(mask_4b)
+    mask_1a = np.copy(mask_1b)
+    mask_2a = np.copy(mask_2b)
+    mask_3a = np.copy(mask_3b)
+    mask_4a = np.copy(mask_4b)
 
-    #data, colors = table.get_voxels_XOR([XOR_1, XOR_2, XOR_3, XOR_4])
-    data, colors = table.get_voxels_XOR([mask_1b, mask_2b, mask_3b, mask_4b])
+    data, colors = table.get_voxels_XOR([XOR_1, XOR_2, XOR_3, XOR_4], voxel_space)
+    #data, colors = table.get_voxels([mask_1b, mask_2b, mask_3b, mask_4b])
     return data, colors
 
 
