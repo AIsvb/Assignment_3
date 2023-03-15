@@ -2,7 +2,7 @@ import glm
 import numpy as np
 import cv2
 from LookUp import LookupTable as LT
-
+import time
 
 foreground_1 = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
 foreground_2 = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
@@ -24,6 +24,8 @@ mask_4a = cv2.cvtColor(mask_4a, cv2.COLOR_BGR2GRAY)
 voxel_size = 50
 table = LT(68, 94, 40, voxel_size)
 
+# voxel_size = 25
+# table = LT(136, 188, 80, voxel_size)
 
 frame_no = 0
 block_size = 1
@@ -44,6 +46,31 @@ def set_voxel_positions():
     data, colors = table.get_voxels([mask_1a, mask_2a, mask_3a, mask_4a])
     
     return data, colors
+
+def set_voxel_positions2():
+    global mask_1a, mask_2a, mask_3a, mask_4a
+
+    data, colors = table.get_voxels([mask_1a, mask_2a, mask_3a, mask_4a])
+
+    clusters = cluster(data)
+
+    data2 = []
+    colors2 = []
+
+    for i in range(4):
+        for j in range(len(clusters[i])):
+            data2.append([clusters[i][j][0], clusters[i][j][1], clusters[i][j][2]])
+            if i == 0:
+                colors2.append([1, 0, 0])
+            if i == 1:
+                colors2.append([0, 1, 0])
+            if i == 2:
+                colors2.append([0, 0, 1])
+            if i == 3:
+                colors2.append([1, 1, 1])
+
+
+    return data2, colors2
 
 # Function to set voxels based on a XOR-mask
 def set_voxel_positions_XOR():
@@ -75,6 +102,7 @@ def set_voxel_positions_XOR():
 
     return data, colors
 
+
 # Method to get the camera positions (translation)
 def get_cam_positions():
     # Generates dummy camera locations at the 4 corners of the room
@@ -98,6 +126,7 @@ def get_cam_positions():
         v.append(translation)
     return v, \
         [[1.0, 0, 0], [0, 1.0, 0], [0, 0, 1.0], [1.0, 1.0, 0]]
+
 
 # Method to get the rotation matrices
 def get_cam_rotation_matrices():
@@ -126,3 +155,22 @@ def get_cam_rotation_matrices():
 
         cam_rotations.append(mat)
     return cam_rotations
+
+def cluster(voxels):
+    start = time.time()
+    coords = np.empty((len(voxels), 3), dtype=np.float32)
+    for i, voxel in enumerate(voxels):
+        x, y, z = voxel[0], voxel[1], voxel[2]
+        coords[i] = np.array([x, y, z], dtype=np.float32)
+
+    # define criteria and apply kmeans()
+    criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
+    _, label, center = cv2.kmeans(coords, 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
+    labeled_voxels = np.hstack((coords, label)).astype(int)
+
+    clusters = [labeled_voxels[labeled_voxels[:, 3] == 0, :], labeled_voxels[labeled_voxels[:, 3] == 1, :],
+                labeled_voxels[labeled_voxels[:, 3] == 2, :], labeled_voxels[labeled_voxels[:, 3] == 3, :]]
+
+    end = time.time()
+    print(f"Execution time clustering: {(end - start)} seconds")
+    return clusters
