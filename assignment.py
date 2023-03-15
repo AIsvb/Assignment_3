@@ -4,21 +4,26 @@ import cv2
 from LookUp import LookupTable as LT
 
 
-foreground_1 = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
-foreground_2 = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
-foreground_3 = cv2.VideoCapture("data/cam3/foreground_cropped.avi")
-foreground_4 = cv2.VideoCapture("data/cam4/foreground_cropped.avi")
+foreground = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
+foreground = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
+foreground = cv2.VideoCapture("data/cam3/foreground_cropped.avi")
+foreground = cv2.VideoCapture("data/cam4/foreground_cropped.avi")
 
-_, mask_1a = foreground_1.read()
+foreground_1 = cv2.VideoCapture("data/cam1/XOR.avi")
+foreground_2 = cv2.VideoCapture("data/cam2/XOR.avi")
+foreground_3 = cv2.VideoCapture("data/cam3/XOR.avi")
+foreground_4 = cv2.VideoCapture("data/cam4/XOR.avi")
+
+_, mask_1a = foreground.read()
 mask_1a = cv2.cvtColor(mask_1a, cv2.COLOR_BGR2GRAY)
 
-_, mask_2a = foreground_2.read()
+_, mask_2a = foreground.read()
 mask_2a = cv2.cvtColor(mask_2a, cv2.COLOR_BGR2GRAY)
 
-_, mask_3a = foreground_3.read()
+_, mask_3a = foreground.read()
 mask_3a = cv2.cvtColor(mask_3a, cv2.COLOR_BGR2GRAY)
 
-_ ,mask_4a = foreground_4.read()
+_ ,mask_4a = foreground.read()
 mask_4a = cv2.cvtColor(mask_4a, cv2.COLOR_BGR2GRAY)
 
 voxel_size = 50
@@ -61,18 +66,18 @@ def set_voxel_positions_XOR():
     _, mask_4b = foreground_4.read()
     mask_4b = cv2.cvtColor(mask_4b, cv2.COLOR_BGR2GRAY)
 
-    XOR_1 = np.bitwise_xor(mask_1b, mask_1a)
-    XOR_2 = np.bitwise_xor(mask_2b, mask_2a)
-    XOR_3 = np.bitwise_xor(mask_3b, mask_3a)
-    XOR_4 = np.bitwise_xor(mask_4b, mask_4a)
+    #XOR_1 = np.bitwise_xor(mask_1b, mask_1a)
+    #XOR_2 = np.bitwise_xor(mask_2b, mask_2a)
+    #XOR_3 = np.bitwise_xor(mask_3b, mask_3a)
+    #XOR_4 = np.bitwise_xor(mask_4b, mask_4a)
 
-    mask_1a = np.copy(mask_1b)
-    mask_2a = np.copy(mask_2b)
-    mask_3a = np.copy(mask_3b)
-    mask_4a = np.copy(mask_4b)
+    #mask_1a = np.copy(mask_1b)
+    #mask_2a = np.copy(mask_2b)
+    #mask_3a = np.copy(mask_3b)
+    #mask_4a = np.copy(mask_4b)
 
-    data, colors = table.get_voxels_XOR([XOR_1, XOR_2, XOR_3, XOR_4])
-
+    #data, colors = table.get_voxels_XOR([XOR_1, XOR_2, XOR_3, XOR_4])
+    data, colors = table.get_voxels_XOR([mask_1b, mask_2b, mask_3b, mask_4b])
     return data, colors
 
 # Method to get the camera positions (translation)
