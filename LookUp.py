@@ -5,7 +5,7 @@
 import cv2
 import numpy as np
 from collections import defaultdict
-
+from matplotlib import pyplot as plt
 
 class LookupTable:
     def __init__(self, width, depth, height, voxel_size):
@@ -39,8 +39,7 @@ class LookupTable:
                         coordinates, _ = cv2.projectPoints(voxel, r_vecs, t_vecs, mtx, dst)
                         coordinates = tuple(coordinates[0].ravel().astype(int))
                         self.voxel2coord[x, y, z, i] = np.array(coordinates)
-                        cube = Voxel(x, y, z)
-                        self.lookup_table[i + 1, coordinates].append(cube)
+                        self.lookup_table[i + 1, coordinates].append(Voxel(x, y, z))
     def get_voxels(self, views):
         self.voxel_space = np.zeros((self.width, self.depth, self.height, 4), dtype=bool)
         for x in np.arange(0, 486):
@@ -52,20 +51,14 @@ class LookupTable:
 
         voxels_on = np.all(self.voxel_space, axis=3)
 
-        #colors_x = self.voxel2coord[voxels_on, :, 0]
-        #colors_y = self.voxel2coord[voxels_on, :, 1]
-
-        #colors_1 = images[0][colors_x[:, 0].tolist(), colors_y[:, 0], :]
-        #colors_2 = images[1][colors_x[:, 1].tolist(), colors_y[:, 1], :]
-        #colors_3 = images[2][colors_x[:, 2].tolist(), colors_y[:, 2], :]
-        #colors_4 = images[3][colors_x[:, 3].tolist(), colors_y[:, 3], :]
-
-
-
         voxels_on = np.nonzero(voxels_on)
+
+
         data = np.column_stack((voxels_on[0], voxels_on[2], voxels_on[1])).tolist()
         colors = np.zeros((len(data), 3), dtype=int).tolist()
-        return data, colors
+
+        return data, colors, voxels_on
+
 
     def get_voxels_XOR(self, views):
         for x in np.arange(0, 486):
@@ -117,4 +110,3 @@ class Camera:
         self.t_vecs = t_vecs
         self.camera_matrix = camera_matrix
         self.distortion_coef = distortion_coef
-
