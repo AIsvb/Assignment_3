@@ -2,27 +2,26 @@ import cv2
 import time
 import numpy as np
 from LookUp import LookupTable
-import matplotlib.pyplot as plt
+import math
 
+def filter_outliers(data, center, threshold):
+    for i in range(len(data)):
+        if math.dist((data[i][0], data[i][2]), center) > threshold * np.std(data):
+            data[i] = [-1, -1, -1, -1]
+
+    return data[data[:, 0] > -1]
 
 def create_table(x, y, z, voxel_size):
-    start = time.time()
     table = LookupTable(x, y, z, voxel_size)
-    end = time.time()
-    print(f"Execution time lookup table creation: {(end - start)} seconds")
     return table
 
 
 def get_voxels(table, masks):
-    start = time.time()
     voxels, colors = table.get_voxels(masks)
-    end = time.time()
-    print(f"Execution time get_voxels: {(end - start)} seconds")
     return voxels
 
 
-def cluster(voxels):
-    start = time.time()
+def cluster(voxels, filter):
     coords = np.empty((len(voxels), 3), dtype=np.float32)
     coords2 = np.empty((len(voxels), 2), dtype=np.float32)
     for i, voxel in enumerate(voxels):
@@ -31,23 +30,22 @@ def cluster(voxels):
 
     # define criteria and apply kmeans()
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-    _, label, center = cv2.kmeans(coords[:, 0:2], 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
+    _, label, center = cv2.kmeans(coords[:, [0, 2]], 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
     labeled_voxels = np.hstack((coords, label)).astype(int)
 
     clusters = [labeled_voxels[labeled_voxels[:, 3] == 0, :], labeled_voxels[labeled_voxels[:, 3] == 1, :],
                 labeled_voxels[labeled_voxels[:, 3] == 2, :], labeled_voxels[labeled_voxels[:, 3] == 3, :]]
 
-    # clusters[0], clusters[1], clusters[2], clusters[3] = np.delete(clusters[0], 3, 1), np.delete(clusters[1], 3, 1), \
-    #     np.delete(clusters[2], 3, 1), np.delete(clusters[3], 3, 1)
+    if filter == 1:
+        for i in range(4):
+            clusters[i] = filter_outliers(clusters[i], center[i], 0.40)
+        # merged = np.concatenate((clusters[0], clusters[1], clusters[2], clusters[3]))
+        # clusters = cluster(merged, 0)
 
-    end = time.time()
-    print(f"Execution time clustering: {(end - start)} seconds")
     return clusters
 
 
 def create_colormodel(table, clusters, view, phase):
-    start = time.time()
-
     # List which will at the end contain the four color models
     color_models = []
 
@@ -114,15 +112,13 @@ def create_colormodel(table, clusters, view, phase):
             histogram = cv2.calcHist([mask], [0, 1], None, [180, 256], [0, 180, 0, 256])
             color_models.append(histogram)
 
-    end = time.time()
-    print(f"Execution time color models: {(end - start)} seconds")
     return color_models
 
 # Offline phase
 def offline_phase():
     # Create lookup table
-    table = create_table(136, 188, 80, 25)
-    # table = create_table(50, 50, 50, 25)
+    # table = create_table(136, 188, 80, 25)
+    table = create_table(68, 94, 40, 50)
     print("\n")
 
     unmatched_color_models = []
@@ -148,7 +144,7 @@ def offline_phase():
                                     cv2.cvtColor(mask3, cv2.COLOR_BGR2GRAY), cv2.cvtColor(mask4, cv2.COLOR_BGR2GRAY)])
 
         # Cluster the voxels
-        clusters = cluster(voxels)
+        clusters = cluster(voxels, 1)
 
         # Determine the color model of the projection to the specified camera image, add them to the list
         color_models_per_view = create_colormodel(table, clusters, i, "Offline")
@@ -174,21 +170,4 @@ def offline_phase():
         final_color_models.append(average_histogram)
 
     return final_color_models
-
-    # # TEST: Distance between histograms
-    # d11 = cv2.compareHist(final_color_models[0], final_color_models[0], 1)
-    # d22 = cv2.compareHist(final_color_models[1], final_color_models[1], 1)
-    # d33 = cv2.compareHist(final_color_models[2], final_color_models[2], 1)
-    # d44 = cv2.compareHist(final_color_models[3], final_color_models[3], 1)
-    #
-    # d12 = cv2.compareHist(final_color_models[0], final_color_models[1], 1)
-    # d13 = cv2.compareHist(final_color_models[0], final_color_models[2], 1)
-    # d14 = cv2.compareHist(final_color_models[0], final_color_models[3], 1)
-    # d23 = cv2.compareHist(final_color_models[1], final_color_models[2], 1)
-    # d24 = cv2.compareHist(final_color_models[1], final_color_models[3], 1)
-    # d34 = cv2.compareHist(final_color_models[2], final_color_models[3], 1)
-
-    print("hi")
-
-
 offline_phase()
