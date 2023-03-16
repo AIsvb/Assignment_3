@@ -1,6 +1,24 @@
 import cv2
 import numpy as np
 
+def crop_video(path, dest):
+    counter = 0
+    video = cv2.VideoCapture(path)
+    out = cv2.VideoWriter(dest, cv2.VideoWriter_fourcc("M", "J", "P", "G"), 10, (644, 486), isColor=True)
+
+    while True:
+        ret, frame = video.read()
+        counter += 1
+
+        if frame is None:
+            break
+
+        if (counter + 10) % 10 == 0:
+            out.write(frame)
+
+    video.release()
+    out.release()
+
 
 def create_mask_video(background, foreground, dest):
     counter = 0
@@ -142,8 +160,13 @@ def create_XOR_videos():
 
 #create_XOR_videos()
 
-cam = 4
-bg = f"data/cam{cam}/background.avi"
-fg = f"data/cam{cam}/video.avi"
-dest = f"data/cam{cam}/foreground_cropped.avi"
-create_mask_video(bg, fg, dest)
+cam = 1
+#bg = f"data/cam{cam}/background.avi"
+#fg = f"data/cam{cam}/video.avi"
+#dest = f"data/cam{cam}/foreground_cropped.avi"
+#create_mask_video(bg, fg, dest)
+
+path = f"data/cam{cam}/video.avi"
+dest = f"data/cam{cam}/video_cropped.avi"
+
+crop_video(path,dest)

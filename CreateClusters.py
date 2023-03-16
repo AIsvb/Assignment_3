@@ -7,8 +7,6 @@ from scipy.optimize import linear_sum_assignment
 def find_clusters(voxel_data):
     # Prepare the voxel data for the kmeans function
     voxels = np.column_stack((voxel_data[0], voxel_data[1], voxel_data[2]))
-    voxels = voxels[voxels[:, 2] >= 18]
-    voxels = voxels[voxels[:, 2] <= 29]
 
     # define criteria and apply kmeans()
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
@@ -20,6 +18,9 @@ def find_clusters(voxel_data):
 def get_histograms(color_images, voxel_data, table):
     # An array to store the histograms
     histograms = np.empty((4, 4, 180, 256), dtype=np.float32)
+
+    voxel_data = voxel_data[voxel_data[:, 2] >= 18]
+    voxel_data = voxel_data[voxel_data[:, 2] <= 29]
 
     # Computing the histograms
     for n, image in enumerate(color_images):
@@ -101,8 +102,7 @@ def get_colors(voxel_data):
 
     return voxel_colors.tolist()
 
-
-
+"""
 ####################
 img1 = cv2.imread("data/cam1/color.png")
 img2 = cv2.imread("data/cam2/color.png")
@@ -116,7 +116,7 @@ mask4 = cv2.imread("data/cam4/voxel.png", cv2.IMREAD_GRAYSCALE)
 
 voxel_size = 50
 table = LookupTable(68, 94, 40, voxel_size)
-data, colors, voxels_on = table.get_voxels([mask1, mask2, mask3, mask4])
+data1, voxels_on = table.get_voxels([mask1, mask2, mask3, mask4])
 
 data, centers = find_clusters(voxels_on)
 histograms = get_histograms([img1, img2, img3, img4], data, table)
@@ -130,4 +130,6 @@ c = get_colors(voxel_data)
 
 for i in range(4):
     show_histograms(histograms[i])
+"""
+
 

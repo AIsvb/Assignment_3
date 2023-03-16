@@ -6,7 +6,7 @@ from engine.buffer.texture import *
 from engine.buffer.hdrbuffer import HDRBuffer
 from engine.buffer.blurbuffer import BlurBuffer
 from engine.effect.bloom import Bloom
-from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices, set_voxel_positions_XOR
+from assignment import set_voxel_positions, generate_grid, get_cam_positions, get_cam_rotation_matrices, set_voxel_positions_live
 from engine.camera import Camera
 from engine.config import config
 
@@ -147,7 +147,7 @@ def main():
             cam.draw_multiple(depth_program)
 
         if started:
-            positions, colors = set_voxel_positions()
+            positions, colors = set_voxel_positions_live()
             cube.set_multiple_positions(positions, colors)
 
         hdrbuffer.bind()

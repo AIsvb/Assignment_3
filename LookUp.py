@@ -5,7 +5,6 @@
 import cv2
 import numpy as np
 from collections import defaultdict
-from matplotlib import pyplot as plt
 
 class LookupTable:
     def __init__(self, width, depth, height, voxel_size):
@@ -50,14 +49,11 @@ class LookupTable:
                             self.voxel_space[voxel.width, voxel.depth, voxel.height, i] = True
 
         voxels_on = np.all(self.voxel_space, axis=3)
-
         voxels_on = np.nonzero(voxels_on)
 
-
         data = np.column_stack((voxels_on[0], voxels_on[2], voxels_on[1])).tolist()
-        colors = np.zeros((len(data), 3), dtype=int).tolist()
 
-        return data, colors, voxels_on
+        return data, voxels_on
 
 
     def get_voxels_XOR(self, views):

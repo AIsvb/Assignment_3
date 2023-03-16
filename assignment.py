@@ -3,15 +3,21 @@ import numpy as np
 import cv2
 from LookUp import LookupTable as LT
 import time
+from CreateClusters import *
 
 foreground1 = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
 foreground2 = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
 foreground3 = cv2.VideoCapture("data/cam3/foreground_cropped.avi")
 foreground4 = cv2.VideoCapture("data/cam4/foreground_cropped.avi")
 
+video1 = cv2.VideoCapture("data/cam1/video_cropped.avi")
+video2 = cv2.VideoCapture("data/cam2/video_cropped.avi")
+video3 = cv2.VideoCapture("data/cam3/video_cropped.avi")
+video4 = cv2.VideoCapture("data/cam4/video_cropped.avi")
 
 voxel_size = 50
 table = LT(68, 94, 40, voxel_size)
+histograms = np.empty((4, 4, 180, 256), dtype=np.float32)
 
 # voxel_size = 25
 # table = LT(136, 188, 80, voxel_size)
@@ -30,20 +36,31 @@ def generate_grid(width, depth):
     return data, colors
 
 def set_voxel_positions():
-    _, mask_1a = foreground1.read()
-    mask_1a = cv2.cvtColor(mask_1a, cv2.COLOR_BGR2GRAY)
+    global histograms, table
+    _, mask_1 = foreground1.read()
+    mask_1 = cv2.cvtColor(mask_1, cv2.COLOR_BGR2GRAY)
 
-    _, mask_2a = foreground2.read()
-    mask_2a = cv2.cvtColor(mask_2a, cv2.COLOR_BGR2GRAY)
+    _, mask_2 = foreground2.read()
+    mask_2 = cv2.cvtColor(mask_2, cv2.COLOR_BGR2GRAY)
 
-    _, mask_3a = foreground3.read()
-    mask_3a = cv2.cvtColor(mask_3a, cv2.COLOR_BGR2GRAY)
+    _, mask_3 = foreground3.read()
+    mask_3 = cv2.cvtColor(mask_3, cv2.COLOR_BGR2GRAY)
 
-    _, mask_4a = foreground4.read()
-    mask_4a = cv2.cvtColor(mask_4a, cv2.COLOR_BGR2GRAY)
+    _, mask_4 = foreground4.read()
+    mask_4 = cv2.cvtColor(mask_4, cv2.COLOR_BGR2GRAY)
 
-    data, colors = table.get_voxels([mask_1a, mask_2a, mask_3a, mask_4a])
-    
+    ret, img1 = video1.read()
+    ret, img2 = video2.read()
+    ret, img3 = video3.read()
+    ret, img4 = video4.read()
+
+    data, voxels_on = table.get_voxels([mask_1, mask_2, mask_3, mask_4])
+
+    cluster_data, _ = find_clusters(voxels_on)
+    histograms = get_histograms([img1, img2, img3, img4], cluster_data, table)
+
+    colors = get_colors(cluster_data)
+
     return data, colors
 
 def set_voxel_positions2():
@@ -72,33 +89,34 @@ def set_voxel_positions2():
     return data2, colors2
 
 # Function to set voxels based on a XOR-mask
-def set_voxel_positions_XOR():
-    global mask_1a, mask_2a, mask_3a, mask_4a, voxel_space
+def set_voxel_positions_live():
+    global histograms, table
+    _, mask_1 = foreground1.read()
+    mask_1 = cv2.cvtColor(mask_1, cv2.COLOR_BGR2GRAY)
 
-    _, mask_1b = foreground1.read()
-    mask_1b = cv2.cvtColor(mask_1b, cv2.COLOR_BGR2GRAY)
+    _, mask_2 = foreground2.read()
+    mask_2 = cv2.cvtColor(mask_2, cv2.COLOR_BGR2GRAY)
 
-    _, mask_2b = foreground2.read()
-    mask_2b = cv2.cvtColor(mask_2b, cv2.COLOR_BGR2GRAY)
+    _, mask_3 = foreground3.read()
+    mask_3 = cv2.cvtColor(mask_3, cv2.COLOR_BGR2GRAY)
 
-    _, mask_3b = foreground3.read()
-    mask_3b = cv2.cvtColor(mask_3b, cv2.COLOR_BGR2GRAY)
+    _, mask_4 = foreground4.read()
+    mask_4 = cv2.cvtColor(mask_4, cv2.COLOR_BGR2GRAY)
 
-    _, mask_4b = foreground4.read()
-    mask_4b = cv2.cvtColor(mask_4b, cv2.COLOR_BGR2GRAY)
+    ret, img1 = video1.read()
+    ret, img2 = video2.read()
+    ret, img3 = video3.read()
+    ret, img4 = video4.read()
 
-    XOR_1 = np.bitwise_xor(mask_1b, mask_1a)
-    XOR_2 = np.bitwise_xor(mask_2b, mask_2a)
-    XOR_3 = np.bitwise_xor(mask_3b, mask_3a)
-    XOR_4 = np.bitwise_xor(mask_4b, mask_4a)
+    data, voxels_on = table.get_voxels([mask_1, mask_2, mask_3, mask_4])
 
-    mask_1a = np.copy(mask_1b)
-    mask_2a = np.copy(mask_2b)
-    mask_3a = np.copy(mask_3b)
-    mask_4a = np.copy(mask_4b)
+    cluster_data, _ = find_clusters(voxels_on)
+    new_hists = get_histograms([img1, img2, img3, img4], cluster_data, table)
 
-    data, colors = table.get_voxels_XOR([XOR_1, XOR_2, XOR_3, XOR_4], voxel_space)
-    #data, colors = table.get_voxels([mask_1b, mask_2b, mask_3b, mask_4b])
+    distances = calculate_distances(histograms, new_hists)
+    labels = hungarian_algorithm(distances)
+    voxel_data = adjust_labels(cluster_data, labels)
+    colors = get_colors(voxel_data)
     return data, colors
 
 
