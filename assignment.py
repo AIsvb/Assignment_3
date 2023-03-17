@@ -3,6 +3,7 @@ import numpy as np
 import cv2
 from LookUp import LookupTable as LT
 from CreateClusters import *
+from matplotlib import pyplot as plt
 
 foreground1 = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
 foreground2 = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
@@ -14,12 +15,12 @@ video2 = cv2.VideoCapture("data/cam2/video_cropped.avi")
 video3 = cv2.VideoCapture("data/cam3/video_cropped.avi")
 video4 = cv2.VideoCapture("data/cam4/video_cropped.avi")
 
+n_frames = int(foreground1.get(cv2.CAP_PROP_FRAME_COUNT))
+positions = np.empty((n_frames, 4, 2), dtype=int)
+
 voxel_size = 50
 table = LT(68, 94, 40, voxel_size)
 histograms = np.empty((4, 4, 180, 256), dtype=np.float32)
-
-# voxel_size = 25
-# table = LT(136, 188, 80, voxel_size)
 
 frame_no = 0
 block_size = 1
@@ -36,7 +37,7 @@ def generate_grid(width, depth):
 
 
 def set_voxel_positions():
-    global histograms, table
+    global histograms, table, frame_no, positions
 
     # Read the frame and foreground mask for all 4 views
     _, mask_1 = foreground1.read()
@@ -58,17 +59,25 @@ def set_voxel_positions():
 
     data, voxels_on = table.get_voxels([mask_1, mask_2, mask_3, mask_4])
 
-    cluster_data, _ = find_clusters(voxels_on, 1)
+    cluster_data, centers = find_clusters(voxels_on, 1)
+    positions[frame_no] = centers
+    frame_no += 1
+
     histograms = get_histograms([img1, img2, img3, img4], cluster_data, table)
 
     colors = get_colors(cluster_data)
+
+    labels = ["blue", "green", "red", "yellow"]
+    for i in np.arange(0, 4):
+        plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c = labels[i])
+    plt.show()
 
     return np.column_stack((cluster_data[:, 0], cluster_data[:, 2], cluster_data[:, 1])).tolist(), colors
     # return data, colors
 
 # Function to set voxels based on a XOR-mask
 def set_voxel_positions_live():
-    global histograms, table
+    global histograms, table, frame_no, positions
     _, mask_1 = foreground1.read()
     mask_1 = cv2.cvtColor(mask_1, cv2.COLOR_BGR2GRAY)
 
@@ -88,7 +97,10 @@ def set_voxel_positions_live():
 
     data, voxels_on = table.get_voxels([mask_1, mask_2, mask_3, mask_4])
 
-    cluster_data, _ = find_clusters(voxels_on, 1)
+    cluster_data, centers = find_clusters(voxels_on, 1)
+    positions[frame_no] = centers
+    frame_no += 1
+
     new_hists = get_histograms([img1, img2, img3, img4], cluster_data, table)
 
     distances = calculate_distances(histograms, new_hists)
@@ -96,6 +108,11 @@ def set_voxel_positions_live():
 
     voxel_data = adjust_labels(cluster_data, labels)
     colors = get_colors(voxel_data)
+
+    tags = ["blue", "green", "red", "yellow"]
+    for i in np.arange(0, 4):
+        plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c=tags[labels[i]])
+    plt.show()
 
     return np.column_stack((cluster_data[:, 0], cluster_data[:, 2], cluster_data[:, 1])).tolist(), colors
 

@@ -15,7 +15,7 @@ def find_clusters(voxel_data, filter):
     _, label, center = cv2.kmeans(voxels[:, 0:2].astype(np.float32), 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
     data = np.append(voxels, label, axis=1)
 
-    data = filter_outliers(data, center, 0.5)[:, 0:3]
+    data = filter_outliers(data, center, 4)[:, 0:3]
 
     _, label, center = cv2.kmeans(data[:, 0:2].astype(np.float32), 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
     data = np.append(data, label, axis=1)
@@ -112,17 +112,16 @@ def hungarian_algorithm(distances):
 
     # Find the best matches of the four views combined
     joint = np.sum(best_matches, axis=0)*-1
-    row, col = linear_sum_assignment(joint)
+    col, row = linear_sum_assignment(joint)
 
     return col
 
-# TODO: Hij maakt nu alle waarden in voxel_data hetzelfde als het label, bijv [7, 13, 21, 1] wordt [1, 1, 1, 1]
 def adjust_labels(voxel_data, labels):
-    temp_values = [10, 11, 12, 13]
-    for i in np.arange(0, 4):
-        voxel_data[voxel_data[:, 3] == i][:, 3] = temp_values[i]
-    for i in np.arange(0, 4):
-        voxel_data[voxel_data[:, 3] == i + 10][:, 3] = labels[i]
+    data_copy = np.copy(voxel_data)
+
+    for label in np.arange(4):
+        voxel_data[data_copy[:, 3] == label][:, 3] = labels[label]
+
     return voxel_data
 
 
@@ -140,58 +139,18 @@ def filter_outliers(data, center, threshold):
     sets = []
     for i in range(4):
         subset = data[data[:, 3] == i]
-        print(subset.shape)
-        #distances = np.sqrt(np.square(subset[:, 0] - center[i, 0]) + np.square(subset[:, 1] - center[i, 1]))
+        distances = np.sqrt(np.square(subset[:, 0] - center[i, 0]) + np.square(subset[:, 1] - center[i, 1]))
+        std = np.std(distances)
 
-        dx = np.sqrt(np.square(subset[:, 0] - center[i, 0]))
-        dy = np.sqrt(np.square(subset[:, 1] - center[i, 1]))
-
-        std_x = np.std(subset[:, 0])
-        std_y = np.std(subset[:, 1])
-
-        filter_x = dx < threshold * std_x
-        filter_y = dy < threshold * std_y
-        filter = np.logical_or(filter_x, filter_y)
+        filter = distances < threshold * std
         subset = subset[filter, :]
         sets.append(subset)
 
     result = np.concatenate(tuple(sets), axis=0)
 
-
-    #for i in range(len(data)):
-        #if math.dist((data[i][0], data[i][1]), center) > threshold * np.std(data):
-            #data[i] = [-1, -1, -1, -1]
-
     return result
 
-"""
-####################
-img1 = cv2.imread("data/cam1/color.png")
-img2 = cv2.imread("data/cam2/color.png")
-img3 = cv2.imread("data/cam3/color.png")
-img4 = cv2.imread("data/cam4/color.png")
-
-mask1 = cv2.imread("data/cam1/voxel.png", cv2.IMREAD_GRAYSCALE)
-mask2 = cv2.imread("data/cam2/voxel.png", cv2.IMREAD_GRAYSCALE)
-mask3 = cv2.imread("data/cam3/voxel.png", cv2.IMREAD_GRAYSCALE)
-mask4 = cv2.imread("data/cam4/voxel.png", cv2.IMREAD_GRAYSCALE)
-
-voxel_size = 50
-table = LookupTable(68, 94, 40, voxel_size)
-data1, voxels_on = table.get_voxels([mask1, mask2, mask3, mask4])
-
-data, centers = find_clusters(voxels_on)
-histograms = get_histograms([img1, img2, img3, img4], data, table)
-
-altered_histograms = np.array([histograms[:, 3, :, :], histograms[:, 1, :, :], histograms[:, 0, :, :], histograms[:, 2, :, :]])
-
-distances = calculate_distances(histograms, histograms)
-labels = hungarian_algorithm(distances)
-voxel_data = adjust_labels(data, labels)
-c = get_colors(voxel_data)
-
-for i in range(4):
-    show_histograms(histograms[i])
-"""
+def tracking():
+    pass
 
 
