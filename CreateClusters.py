@@ -48,32 +48,37 @@ def get_histograms(color_images, voxel_data, table):
             y_coords = table.voxel2coord[voxel_cluster[:, 0], voxel_cluster[:, 1], voxel_cluster[:, 2], :, 0]
 
             # Create mask
-            mask = np.zeros(image.shape[0:2], np.uint8)
-            #mask[x_coords[:, n], y_coords[:, n]] = image[x_coords[:, n], y_coords[:, n]]
+            mask = np.zeros_like(cv2.cvtColor(image, cv2.COLOR_BGR2GRAY))
             mask[x_coords[:, n], y_coords[:, n]] = 255
-            kernel = np.ones((3,3), dtype=np.uint8)
-            mask = cv2.dilate(mask, kernel, iterations = 2)
-            #mask[mask[:, :, 1] == 255] =
+            # kernel = np.ones((3, 3), dtype=np.uint8)
+            # mask = cv2.dilate(mask, kernel, iterations=1)
+            # mask = cv2.erode(mask, kernel, iterations=1)
 
-            # Show image points used for histogram
-            #cv2.imshow("img", mask)
-            #cv2.waitKey(0)
-            #cv2.destroyAllWindows()
+            # mask2 = np.zeros_like(image)
+            # for x in np.arange(0, 486):
+            #     for y in np.arange(0, 644):
+            #         if mask[x, y]== 255:
+            #             mask2[x, y] = image[x, y]
+            #
+            # # Show image points used for histogram
+            # cv2.imshow("img", mask2)
+            # cv2.waitKey(0)
+            # cv2.destroyAllWindows()
 
             # Calculate histogram
-            #cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
             image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-            hist = cv2.calcHist([image_hsv], [0, 1], mask, [16, 16], [0, 180, 60, 256]
+            hist = cv2.calcHist([image_hsv], [0, 1], mask, [16, 16], [0, 180, 120, 256]
                                 , accumulate=False)
 
             # Normalize histogram
             total_sum_bins = np.sum(hist)
-            hist = hist / total_sum_bins
+            if total_sum_bins > 0:
+                hist = hist / total_sum_bins
 
             # Save histogram
             histograms[n, m] = hist
 
-    return histograms
+        return histograms
 
 
 def show_histograms(histograms):
@@ -107,20 +112,26 @@ def hungarian_algorithm(distances):
 
     # Calculating the best matches for all four views
     for image in np.arange(0, 4):
-        row, col = linear_sum_assignment(distances[image])
+        col, row = linear_sum_assignment(distances[image])
         best_matches[image, row, col] = 1
 
     # Find the best matches of the four views combined
     joint = np.sum(best_matches, axis=0)*-1
-    col, row = linear_sum_assignment(joint)
+    row, col = linear_sum_assignment(joint)
 
     return col
 
 def adjust_labels(voxel_data, labels):
-    data_copy = np.copy(voxel_data)
+    temp_values = [10, 11, 12, 13]
+    for i in np.arange(0, 4):
+        voxel_data[voxel_data[:, 3] == i] = temp_values[i]
+    for i in np.arange(0, 4):
+        voxel_data[voxel_data[:, 3] == i + 10] = labels[i]
 
-    for label in np.arange(4):
-        voxel_data[data_copy[:, 3] == label][:, 3] = labels[label]
+    #data_copy = np.copy(voxel_data)
+
+    #for label in np.arange(4):
+    #    voxel_data[data_copy[:, 3] == label][:, 3] = labels[label]
 
     return voxel_data
 
@@ -149,8 +160,5 @@ def filter_outliers(data, center, threshold):
     result = np.concatenate(tuple(sets), axis=0)
 
     return result
-
-def tracking():
-    pass
 
 

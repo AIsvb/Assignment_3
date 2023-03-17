@@ -20,7 +20,7 @@ positions = np.empty((n_frames, 4, 2), dtype=int)
 
 voxel_size = 50
 table = LT(68, 94, 40, voxel_size)
-histograms = np.empty((4, 4, 180, 256), dtype=np.float32)
+histograms = np.empty((4, 4, 16, 16), dtype=np.float32)
 
 frame_no = 0
 block_size = 1
@@ -67,10 +67,10 @@ def set_voxel_positions():
 
     colors = get_colors(cluster_data)
 
-    labels = ["blue", "green", "red", "yellow"]
-    for i in np.arange(0, 4):
-        plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c = labels[i])
-    plt.show()
+    #labels = ["blue", "green", "red", "yellow"]
+    #for i in np.arange(0, 4):
+    #    plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c = labels[i])
+    #plt.show()
 
     return np.column_stack((cluster_data[:, 0], cluster_data[:, 2], cluster_data[:, 1])).tolist(), colors
     # return data, colors
@@ -106,13 +106,14 @@ def set_voxel_positions_live():
     distances = calculate_distances(histograms, new_hists)
     labels = hungarian_algorithm(distances)
 
-    voxel_data = adjust_labels(cluster_data, labels)
+    c2 = np.copy(cluster_data)
+    voxel_data = adjust_labels(c2, labels)
     colors = get_colors(voxel_data)
 
-    tags = ["blue", "green", "red", "yellow"]
-    for i in np.arange(0, 4):
-        plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c=tags[labels[i]])
-    plt.show()
+    #tags = ["blue", "green", "red", "yellow"]
+    #for i in np.arange(0, 4):
+    #    plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c=tags[labels[i]])
+    #plt.show()
 
     return np.column_stack((cluster_data[:, 0], cluster_data[:, 2], cluster_data[:, 1])).tolist(), colors
 
