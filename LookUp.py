@@ -6,6 +6,7 @@ import cv2
 import numpy as np
 from collections import defaultdict
 
+
 class LookupTable:
     def __init__(self, width, depth, height, voxel_size):
         self.voxel_space = np.zeros((width, depth, height, 4), dtype=bool)
@@ -39,6 +40,7 @@ class LookupTable:
                         coordinates = tuple(coordinates[0].ravel().astype(int))
                         self.voxel2coord[x, y, z, i] = np.array(coordinates)
                         self.lookup_table[i + 1, coordinates].append(Voxel(x, y, z))
+
     def get_voxels(self, views):
         self.voxel_space = np.zeros((self.width, self.depth, self.height, 4), dtype=bool)
         for x in np.arange(0, 486):
@@ -55,8 +57,7 @@ class LookupTable:
 
         return data, voxels_on
 
-
-    def get_voxels_XOR(self, views):
+    def get_voxels_xor(self, views):
         for x in np.arange(0, 486):
             for y in np.arange(0, 644):
                 for i, view in enumerate(views):
@@ -93,11 +94,13 @@ class LookupTable:
 
         return Camera(r_vecs, t_vecs, camera_matrix, distortion_coef)
 
+
 class Voxel:
     def __init__(self, width, depth, height):
         self.width = width
         self.depth = depth
         self.height = height
+
 
 # Camera class to store intrinsics and extrinsics
 class Camera:
