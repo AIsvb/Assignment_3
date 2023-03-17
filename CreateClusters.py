@@ -12,15 +12,19 @@ def find_clusters(voxel_data, filter):
 
     # define criteria and apply kmeans()
     criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 10, 1.0)
-    _, label, center = cv2.kmeans(voxels[:, [0, 1]].astype(np.float32), 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
+    _, label, center = cv2.kmeans(voxels[:, 0:2].astype(np.float32), 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
     data = np.append(voxels, label, axis=1)
 
+    data = filter_outliers(data, center, 0.5)[:, 0:3]
+
+    _, label, center = cv2.kmeans(data[:, 0:2].astype(np.float32), 4, None, criteria, 10, cv2.KMEANS_PP_CENTERS)
+    data = np.append(data, label, axis=1)
     # Filter outliers (NOT FINISHED)
-    if filter == 1:
-        for i in range(4):
-            data[data[:, 3] == i] = filter_outliers(data[data[:, 3] == i], center[i], 0.5)
+    #if filter == 1:
+        #for i in range(4):
+            #data[data[:, 3] == i] = filter_outliers(data[data[:, 3] == i], center[i], 0.5)
             # data = find_clusters([data[:, 0], data[:, 1], data[:, 2]], 0)
-        data = data[data[:, 0] > -1]
+        #data = data[data[:, 0] > -1]
 
     return data, center
 
@@ -44,8 +48,12 @@ def get_histograms(color_images, voxel_data, table):
             y_coords = table.voxel2coord[voxel_cluster[:, 0], voxel_cluster[:, 1], voxel_cluster[:, 2], :, 0]
 
             # Create mask
-            mask = np.zeros(image.shape, np.uint8)
-            mask[x_coords[:, n], y_coords[:, n]] = image[x_coords[:, n], y_coords[:, n]]
+            mask = np.zeros(image.shape[0:2], np.uint8)
+            #mask[x_coords[:, n], y_coords[:, n]] = image[x_coords[:, n], y_coords[:, n]]
+            mask[x_coords[:, n], y_coords[:, n]] = 255
+            kernel = np.ones((3,3), dtype=np.uint8)
+            mask = cv2.dilate(mask, kernel, iterations = 2)
+            #mask[mask[:, :, 1] == 255] =
 
             # Show image points used for histogram
             #cv2.imshow("img", mask)
@@ -53,8 +61,9 @@ def get_histograms(color_images, voxel_data, table):
             #cv2.destroyAllWindows()
 
             # Calculate histogram
+            #cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
             image_hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-            hist = cv2.calcHist([image_hsv], [0, 1], cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY), [16, 16], [0, 180, 60, 256]
+            hist = cv2.calcHist([image_hsv], [0, 1], mask, [16, 16], [0, 180, 60, 256]
                                 , accumulate=False)
 
             # Normalize histogram
@@ -111,9 +120,9 @@ def hungarian_algorithm(distances):
 def adjust_labels(voxel_data, labels):
     temp_values = [10, 11, 12, 13]
     for i in np.arange(0, 4):
-        voxel_data[voxel_data[:, 3] == i] = temp_values[i]
+        voxel_data[voxel_data[:, 3] == i][:, 3] = temp_values[i]
     for i in np.arange(0, 4):
-        voxel_data[voxel_data[:, 3] == i + 10] = labels[i]
+        voxel_data[voxel_data[:, 3] == i + 10][:, 3] = labels[i]
     return voxel_data
 
 
@@ -128,11 +137,32 @@ def get_colors(voxel_data):
 
 
 def filter_outliers(data, center, threshold):
-    for i in range(len(data)):
-        if math.dist((data[i][0], data[i][1]), center) > threshold * np.std(data):
-            data[i] = [-1, -1, -1, -1]
+    sets = []
+    for i in range(4):
+        subset = data[data[:, 3] == i]
+        print(subset.shape)
+        #distances = np.sqrt(np.square(subset[:, 0] - center[i, 0]) + np.square(subset[:, 1] - center[i, 1]))
 
-    return data
+        dx = np.sqrt(np.square(subset[:, 0] - center[i, 0]))
+        dy = np.sqrt(np.square(subset[:, 1] - center[i, 1]))
+
+        std_x = np.std(subset[:, 0])
+        std_y = np.std(subset[:, 1])
+
+        filter_x = dx < threshold * std_x
+        filter_y = dy < threshold * std_y
+        filter = np.logical_or(filter_x, filter_y)
+        subset = subset[filter, :]
+        sets.append(subset)
+
+    result = np.concatenate(tuple(sets), axis=0)
+
+
+    #for i in range(len(data)):
+        #if math.dist((data[i][0], data[i][1]), center) > threshold * np.std(data):
+            #data[i] = [-1, -1, -1, -1]
+
+    return result
 
 """
 ####################

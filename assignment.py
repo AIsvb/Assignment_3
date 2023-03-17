@@ -94,8 +94,7 @@ def set_voxel_positions_live():
     distances = calculate_distances(histograms, new_hists)
     labels = hungarian_algorithm(distances)
 
-    c2 = np.copy(cluster_data)
-    voxel_data = adjust_labels(c2, labels)
+    voxel_data = adjust_labels(cluster_data, labels)
     colors = get_colors(voxel_data)
 
     return np.column_stack((cluster_data[:, 0], cluster_data[:, 2], cluster_data[:, 1])).tolist(), colors
