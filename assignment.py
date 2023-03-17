@@ -16,7 +16,7 @@ video4 = cv2.VideoCapture("data/cam4/video_cropped.avi")
 
 voxel_size = 50
 table = LT(68, 94, 40, voxel_size)
-histograms = np.empty((4, 4, 180, 256), dtype=np.float32)
+histograms = np.empty((4, 4, 16, 16), dtype=np.float32)
 
 # voxel_size = 25
 # table = LT(136, 188, 80, voxel_size)
@@ -94,7 +94,8 @@ def set_voxel_positions_live():
     distances = calculate_distances(histograms, new_hists)
     labels = hungarian_algorithm(distances)
 
-    voxel_data = adjust_labels(cluster_data, labels)
+    c2 = np.copy(cluster_data)
+    voxel_data = adjust_labels(c2, labels)
     colors = get_colors(voxel_data)
 
     return np.column_stack((cluster_data[:, 0], cluster_data[:, 2], cluster_data[:, 1])).tolist(), colors
