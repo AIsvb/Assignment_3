@@ -146,6 +146,7 @@ def main():
         for cam in cam_shapes:
             cam.draw_multiple(depth_program)
 
+        # Upon pressing the key "v" the online phase can be initiated or halted
         if started:
             positions, colors = set_voxel_positions_live()
             cube.set_multiple_positions(positions, colors)

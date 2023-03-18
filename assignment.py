@@ -1,10 +1,16 @@
+# Computer Vision: Assignment 3
+# Creators: Doyran, M., Gino Kuiper and Sander van Bennekom
+# Date: 18-03-2023
+
 import glm
+from lookup_table import LookupTable as LT
+from clustering_and_matching import *
+from matplotlib import pyplot as plt
 import numpy as np
 import cv2
-from LookUp import LookupTable as LT
-from CreateClusters import *
-from matplotlib import pyplot as plt
 
+
+# Creating all video handlers
 foreground1 = cv2.VideoCapture("data/cam1/foreground_cropped.avi")
 foreground2 = cv2.VideoCapture("data/cam2/foreground_cropped.avi")
 foreground3 = cv2.VideoCapture("data/cam3/foreground_cropped.avi")
@@ -15,14 +21,27 @@ video2 = cv2.VideoCapture("data/cam2/video_cropped.avi")
 video3 = cv2.VideoCapture("data/cam3/video_cropped.avi")
 video4 = cv2.VideoCapture("data/cam4/video_cropped.avi")
 
+foreground_handlers = [foreground1, foreground2, foreground3, foreground4]
+video_handlers = [video1, video2, video3, video4]
+
+# Creating variables needed for tracking the path of the persons
 n_frames = int(foreground1.get(cv2.CAP_PROP_FRAME_COUNT))
 positions = np.empty((n_frames, 4, 2), dtype=int)
+frame_no = 0
 
-voxel_size = 50
-table = LT(68, 94, 40, voxel_size)
+# Creating the lookup table
+x = 3400
+y = 4700
+z = 2000
+dx = 1900
+dy = 700
+
+voxel_size = 40
+table = LT(int(x/voxel_size), int(y/voxel_size), int(z/voxel_size), voxel_size)
+
+# An array for storing the reference color models
 histograms = np.empty((4, 4, 16, 16), dtype=np.float32)
 
-frame_no = 0
 block_size = 1
 
 def generate_grid(width, depth):
@@ -36,84 +55,85 @@ def generate_grid(width, depth):
     return data, colors
 
 
+# Function that computes the voxel data in the offline phase
 def set_voxel_positions():
     global histograms, table, frame_no, positions
 
-    # Read the frame and foreground mask for all 4 views
-    _, mask_1 = foreground1.read()
-    mask_1 = cv2.cvtColor(mask_1, cv2.COLOR_BGR2GRAY)
+    # Read all masks and images
+    masks = []
+    images = []
 
-    _, mask_2 = foreground2.read()
-    mask_2 = cv2.cvtColor(mask_2, cv2.COLOR_BGR2GRAY)
+    for i, fg_handler in enumerate(foreground_handlers):
+        _, mask = fg_handler.read()
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        masks.append(mask)
 
-    _, mask_3 = foreground3.read()
-    mask_3 = cv2.cvtColor(mask_3, cv2.COLOR_BGR2GRAY)
+    for j, video_handler in enumerate(video_handlers):
+        _, img = video_handler.read()
+        images.append(img)
 
-    _, mask_4 = foreground4.read()
-    mask_4 = cv2.cvtColor(mask_4, cv2.COLOR_BGR2GRAY)
+    # Calculate all voxels that should be on according to the foreground masks
+    data, voxels_on = table.get_voxels(masks)
 
-    ret, img1 = video1.read()
-    ret, img2 = video2.read()
-    ret, img3 = video3.read()
-    ret, img4 = video4.read()
-
-    data, voxels_on = table.get_voxels([mask_1, mask_2, mask_3, mask_4])
-
+    # Cluster the voxels
     cluster_data, centers = find_clusters(voxels_on, 1)
+
+    # Save the cluster centers
     positions[frame_no] = centers
     frame_no += 1
 
-    histograms = get_histograms([img1, img2, img3, img4], cluster_data, table)
+    # Compute the reference color models for the clusters
+    histograms = get_histograms(images, cluster_data, table)
 
+    # Get the colors for the voxels
     colors = get_colors(cluster_data)
 
-    #labels = ["blue", "green", "red", "yellow"]
-    #for i in np.arange(0, 4):
-    #    plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c = labels[i])
-    #plt.show()
-
     return np.column_stack((cluster_data[:, 0], cluster_data[:, 2], cluster_data[:, 1])).tolist(), colors
-    # return data, colors
 
-# Function to set voxels based on a XOR-mask
+
+# Function that computes the voxel data in the online phase
 def set_voxel_positions_live():
     global histograms, table, frame_no, positions
-    _, mask_1 = foreground1.read()
-    mask_1 = cv2.cvtColor(mask_1, cv2.COLOR_BGR2GRAY)
 
-    _, mask_2 = foreground2.read()
-    mask_2 = cv2.cvtColor(mask_2, cv2.COLOR_BGR2GRAY)
+    # Read all masks and images
+    masks = []
+    images = []
 
-    _, mask_3 = foreground3.read()
-    mask_3 = cv2.cvtColor(mask_3, cv2.COLOR_BGR2GRAY)
+    for i, fg_handler in enumerate(foreground_handlers):
+        _, mask = fg_handler.read()
+        mask = cv2.cvtColor(mask, cv2.COLOR_BGR2GRAY)
+        masks.append(mask)
 
-    _, mask_4 = foreground4.read()
-    mask_4 = cv2.cvtColor(mask_4, cv2.COLOR_BGR2GRAY)
+    for j, video_handler in enumerate(video_handlers):
+        _, img = video_handler.read()
+        images.append(img)
 
-    ret, img1 = video1.read()
-    ret, img2 = video2.read()
-    ret, img3 = video3.read()
-    ret, img4 = video4.read()
+    # Calculate all voxels that should be on according to the foreground masks
+    data, voxels_on = table.get_voxels(masks)
 
-    data, voxels_on = table.get_voxels([mask_1, mask_2, mask_3, mask_4])
-
+    # Cluster the voxels
     cluster_data, centers = find_clusters(voxels_on, 1)
+
+    # Save the cluster centers
     positions[frame_no] = centers
     frame_no += 1
 
-    new_hists = get_histograms([img1, img2, img3, img4], cluster_data, table)
+    # Compute the color models for the clusters
+    new_hists = get_histograms(images, cluster_data, table)
 
+    # Match the color models with the reference models and adjust the voxels labels accordingly
     distances = calculate_distances(histograms, new_hists)
     labels = hungarian_algorithm(distances)
+    voxel_data = adjust_labels(cluster_data, labels)
 
-    c2 = np.copy(cluster_data)
-    voxel_data = adjust_labels(c2, labels)
+    # Get the colors for the voxels
     colors = get_colors(voxel_data)
 
-    #tags = ["blue", "green", "red", "yellow"]
-    #for i in np.arange(0, 4):
-    #    plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c=tags[labels[i]])
-    #plt.show()
+    if True:
+        tags = ["blue", "green", "red", "yellow"]
+        for i in np.arange(0, 4):
+            plt.scatter(positions[0:frame_no, i, 1], positions[0:frame_no, i, 0], c=tags[labels[i]])
+        plt.show()
 
     return np.column_stack((cluster_data[:, 0], cluster_data[:, 2], cluster_data[:, 1])).tolist(), colors
 
@@ -136,7 +156,7 @@ def get_cam_positions():
         t_vecs = -np.matrix(r_vecs).T * np.matrix(t_vecs)
 
         t_vecs = t_vecs.astype(int)
-        translation= [(t_vecs[0,0]-500)/20, -t_vecs[2,0]/20, t_vecs[1,0]/20]
+        translation= [(t_vecs[0,0] + dx)/voxel_size, -t_vecs[2,0]/voxel_size, (t_vecs[1,0] + dy)/voxel_size]
 
         v.append(translation)
     return v, \

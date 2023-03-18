@@ -1,7 +1,7 @@
 import cv2
 import time
 import numpy as np
-from LookUp import LookupTable
+from lookup_table import LookupTable
 import math
 
 def filter_outliers(data, center, threshold):
